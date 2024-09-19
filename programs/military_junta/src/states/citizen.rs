@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 
+#[derive(Copy)]
 #[account]
 pub struct Citizen {
     pub authority: Pubkey,

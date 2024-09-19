@@ -47,6 +47,25 @@ pub fn initialize_pool(
             initial_liquidity_amount,
         )?;
 
+        // Trying out something different
+        // let cpi_accounts = anchor_spl::associated_token::Create {
+        //     payer: ctx.accounts.user.to_account_info(),
+        //     associated_token: ctx.accounts.user.to_account_info(),
+        //     authority: ctx.accounts.user.to_account_info(),
+        //     mint: ctx.accounts.lp_mint.to_account_info(),
+        //     system_program: ctx.accounts.system_program.to_account_info(),
+        //     token_program: ctx.accounts.token_program.to_account_info(),
+        // };
+        // let cpi_program = ctx.accounts.associated_token_program.to_account_info();
+        // let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+        // anchor_spl::associated_token::create(cpi_ctx)?;
+    
+        // // Mint LP tokens to the user
+        // let user_lp_token = anchor_spl::associated_token::get_associated_token_address(
+        //     &ctx.accounts.user.key(),
+        //     &ctx.accounts.lp_mint.key(),
+        // );
+
         // Mint LP tokens to the user
         token::mint_to(
             CpiContext::new(
@@ -138,41 +157,43 @@ pub struct InitializePool<'info> {
         seeds = [b"pool"],
         bump
     )]
-    pub pool: Account<'info, Pool>,
-    pub token_a_mint: Account<'info, Mint>,
-    pub token_b_mint: Account<'info, Mint>,
+    pub pool: Box<Account<'info, Pool>>,
+    /// CHECK: This account is not read or written in the program
+    pub token_a_mint: UncheckedAccount<'info>,
+    /// CHECK: This account is not read or written in the program
+    pub token_b_mint: UncheckedAccount<'info>,
     #[account(
         init,
         payer = user,
         associated_token::mint = token_a_mint,
         associated_token::authority = pool,
     )]
-    pub token_a_reserve: Account<'info, TokenAccount>,
+    pub token_a_reserve: Box<Account<'info, TokenAccount>>,
     #[account(
         init,
         payer = user,
         associated_token::mint = token_b_mint,
         associated_token::authority = pool,
     )]
-    pub token_b_reserve: Account<'info, TokenAccount>,
+    pub token_b_reserve: Box<Account<'info, TokenAccount>>,
     #[account(
         init,
         payer = user,
         mint::decimals = 6,
         mint::authority = pool,
     )]
-    pub lp_mint: Account<'info, Mint>,
+    pub lp_mint: Box<Account<'info, Mint>>,
     #[account(
         init,
         payer = user,
         associated_token::mint = lp_mint,
         associated_token::authority = user,
     )]
-    pub user_lp_token: Account<'info, TokenAccount>,
+    pub user_lp_token: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
-    pub user_token_a: Account<'info, TokenAccount>,
+    pub user_token_a: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
-    pub user_token_b: Account<'info, TokenAccount>,
+    pub user_token_b: Box<Account<'info, TokenAccount>>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,

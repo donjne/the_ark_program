@@ -59,8 +59,8 @@ pub mod military_junta {
         suppress_dissent(ctx, target)
     }
 
-    pub fn manage_resources(ctx: Context<ManageResources>, action: ResourceAction, amount: u64) -> Result<()> {
-        resources(ctx, action, amount)
+    pub fn manage_junta_resources(ctx: Context<ManageResources>, action: ResourceAction, amount: u64) -> Result<()> {
+        manage_resources(ctx, action, amount)
     }
 
     pub fn delegate_token_account(ctx: Context<ApproveDelegate>, amount: u64) -> Result<()> {
@@ -84,7 +84,7 @@ pub mod military_junta {
     }
 
     pub fn start_rebel(ctx: Context<StartRebellion>, rebellion_scale: u64) -> Result<()> {
-        start_rebellion(ctx, rebellion_scale)
+        start_rebellion(ctx)
     }
 
     pub fn reward_citizen(ctx: Context<RewardLoyalty>, amount: u64) -> Result<()> {

@@ -14,4 +14,6 @@ pub struct InitializeArk<'info> {
 pub struct UpdateAnalytics<'info> {
     #[account(mut)]
     pub ark_analytics: Account<'info, ArkAnalytics>,
+    #[account(mut)]
+    pub signer: Signer<'info>,
 }

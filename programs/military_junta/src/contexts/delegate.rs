@@ -23,7 +23,7 @@ pub struct ApproveDelegate<'info> {
     pub citizen_ata: Account<'info, TokenAccount>,  
     #[account(signer)]
     /// CHECK: We are passing in this account ourselves
-    pub leader: AccountInfo<'info>,  
+    pub leader: UncheckedAccount<'info>,  
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,

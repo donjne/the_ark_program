@@ -38,6 +38,12 @@ pub enum ErrorCode {
     SameUserAccounts,
     #[msg("Overflow error")]
     Overflow,
+    #[msg("Underflow error")]
+    Underflow,
     #[msg("Exceeeds maximum supply ")]
     ExceedsSupply,
+    #[msg("Invalid Junta Vault ")]
+    InvalidJuntaVault,
+    #[msg("The maximum size of support has been met")]
+    SupportAmountsArrayFull
 }

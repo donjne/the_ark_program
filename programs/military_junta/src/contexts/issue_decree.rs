@@ -27,6 +27,7 @@ pub fn issue_decree(ctx: Context<IssueDecree>, content: String) -> Result<()> {
         junta.leader == ctx.accounts.issuer.key() || junta.officers.contains(&ctx.accounts.issuer.key()),
         ErrorCode::Unauthorized
     );
+    
     require!(junta.decrees.len() < Junta::MAX_DECREES, ErrorCode::TooManyDecrees);
 
     decree.issuer = ctx.accounts.issuer.key();

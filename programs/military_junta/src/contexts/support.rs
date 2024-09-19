@@ -7,41 +7,51 @@ use crate::states::{junta::Junta, citizen::Citizen, supporters::*};
 const SUPPORTERS_PER_LEVEL: usize = 10; // Number of supporters needed to increase control level
 
 #[derive(Accounts)]
+#[instruction(amount: u64)]
 pub struct GainSupport<'info> {
     #[account(mut)]
-    pub junta: Account<'info, Junta>,
+    pub junta: Box<Account<'info, Junta>>,
 
     #[account(
-        mut,
+        init_if_needed,
+        payer = signer,
+        space = 8 + Supporters::SIZE, // 8 for the discriminator
         seeds = [b"supporters", junta.key().as_ref()],
         bump
     )]
-    pub supporters: Account<'info, Supporters>,
+    pub supporters: Box<Account<'info, Supporters>>,
 
     #[account(mut)]
     pub signer: Signer<'info>,
 
     #[account(mut)]
-    pub citizen: Account<'info, Citizen>,
+    pub citizen: Box<Account<'info, Citizen>>,
 
     #[account(
         mut,
         constraint = citizen_token_account.owner == citizen.key(),
     )]
-    pub citizen_token_account: Account<'info, TokenAccount>,
+    pub citizen_token_account: Box<Account<'info, TokenAccount>>,
 
     #[account(
         mut,
         constraint = junta_token_account.owner == junta.key(),
     )]
-    pub junta_token_account: Account<'info, TokenAccount>,
+    pub junta_token_account: Box<Account<'info, TokenAccount>>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 pub fn gain_support(ctx: Context<GainSupport>, amount: u64) -> Result<()> {
     let junta = &mut ctx.accounts.junta;
     let supporters = &mut ctx.accounts.supporters;
+
+    // Initialize the Supporters account if it's new
+    if supporters.count == 0 {
+        supporters.supporters = [None; MAX_SUPPORTERS];
+        supporters.support_amounts = [(Pubkey::default(), 0); MAX_SUPPORT_AMOUNTS];
+    }
 
     // Transfer tokens from citizen to junta
     let cpi_accounts = Transfer {
@@ -54,10 +64,11 @@ pub fn gain_support(ctx: Context<GainSupport>, amount: u64) -> Result<()> {
     token::transfer(cpi_ctx, amount)?;
 
     // Check if the citizen has transferred enough to be considered a supporter
-    let citizen_total_support = supporters.get_support_amount(&ctx.accounts.citizen.key()) + amount;
+    let citizen_key = ctx.accounts.citizen.key();
+    let citizen_total_support = supporters.get_support_amount(&citizen_key) + amount;
     
-    if citizen_total_support >= junta.support_threshold && !supporters.is_supporter(&ctx.accounts.citizen.key()) {
-        supporters.add_supporter(ctx.accounts.citizen.key())?;
+    if citizen_total_support >= junta.support_threshold && !supporters.is_supporter(&citizen_key) {
+        supporters.add_supporter(citizen_key)?;
         
         // Calculate how many levels to increase
         let new_levels = (supporters.count as usize / SUPPORTERS_PER_LEVEL) - ((supporters.count - 1) as usize / SUPPORTERS_PER_LEVEL);
@@ -68,18 +79,20 @@ pub fn gain_support(ctx: Context<GainSupport>, amount: u64) -> Result<()> {
         // Emit event for new supporter
         emit!(NewSupporterEvent {
             junta: junta.key(),
-            supporter: ctx.accounts.citizen.key(),
+            supporter: citizen_key,
             amount: citizen_total_support,
         });
     }
 
+    msg!("New Supporter has been added");
+
     // Update the citizen's total support amount
-    supporters.update_support_amount(ctx.accounts.citizen.key(), citizen_total_support)?;
+    supporters.update_support_amount(citizen_key, citizen_total_support)?;
 
     // Emit event for support contribution
     emit!(SupportContributionEvent {
         junta: junta.key(),
-        supporter: ctx.accounts.citizen.key(),
+        supporter: citizen_key,
         amount,
         total_support: citizen_total_support,
     });

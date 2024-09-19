@@ -8,8 +8,9 @@ pub struct TransferLeadership<'info> {
     pub junta: Account<'info, Junta>,
     #[account(mut)]
     pub current_leader: Signer<'info>,
+    #[account(mut)]
     /// CHECK: This account is not read or written, just used as a Pubkey
-    pub new_leader: AccountInfo<'info>,
+    pub new_leader: UncheckedAccount<'info>,
 }
 
 pub fn transfer_leadership(ctx: Context<TransferLeadership>, new_leader: Pubkey) -> Result<()> {

@@ -1,5 +1,9 @@
 use anchor_lang::prelude::*;
 use crate::{states::junta::Junta, InitializeJuntaArgs};
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token::{Mint, Token, TokenAccount},
+};
 
 #[derive(Accounts)]
 #[instruction(args: InitializeJuntaArgs)]
@@ -12,9 +16,20 @@ pub struct InitializeJunta<'info> {
         bump
     )]
     pub junta: Account<'info, Junta>,
+    pub mint: Account<'info, Mint>,
     #[account(mut)]
     pub leader: Signer<'info>,
+    #[account(
+        init_if_needed,
+        payer = leader,
+        associated_token::mint = mint,
+        associated_token::authority = junta,
+    )]
+    pub junta_ata: Account<'info, TokenAccount>,
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 pub fn initialize_junta(ctx: Context<InitializeJunta>, args: InitializeJuntaArgs) -> Result<()> {
@@ -50,5 +65,6 @@ pub fn initialize_junta(ctx: Context<InitializeJunta>, args: InitializeJuntaArgs
     junta.martial_law_active = false;
     junta.collection_price = args.collection_price;
     junta.support_threshold = args.support_threshold;
+    junta.vault = ctx.accounts.junta_ata.key();
     Ok(())
 }

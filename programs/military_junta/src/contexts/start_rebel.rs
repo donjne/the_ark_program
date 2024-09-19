@@ -1,9 +1,9 @@
 use anchor_lang::prelude::*;
 use crate::states::{junta::Junta, citizen::Citizen, rebel::Rebel};
-use crate::errors::ErrorCode;
 
 
 #[derive(Accounts)]
+#[instruction(rebellion_scale: u64)]
 pub struct StartRebellion<'info> {
     #[account(mut)]
     pub junta: Account<'info, Junta>,
@@ -11,22 +11,35 @@ pub struct StartRebellion<'info> {
     #[account(mut)]
     pub rebel_leader: Signer<'info>,  
 
-    #[account(mut)]
+    #[account(
+        init_if_needed,
+        payer = rebel_leader,
+        space = 8 + Rebel::SIZE, // 8 for the discriminator
+        seeds = [b"rebel", junta.key().as_ref()],
+        bump
+    )]
     pub rebels: Account<'info, Rebel>,  
 
     #[account(mut)]
     pub citizen: Account<'info, Citizen>, 
+
+    pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 
-pub fn start_rebellion(ctx: Context<StartRebellion>, rebellion_scale: u64) -> Result<()> {
+pub fn start_rebellion(ctx: Context<StartRebellion>) -> Result<()> {
     let junta = &mut ctx.accounts.junta;
     let rebels = &mut ctx.accounts.rebels;
-    let citizen = &ctx.accounts.citizen;
+    let citizen = &mut ctx.accounts.citizen;
 
-    require!(rebels.count as u64 >= rebellion_scale, ErrorCode::NotEnoughRebels);
+    // Initialize the Rebel account if it's new
+    if rebels.count == 0 {
+        rebels.rebels = [None; Rebel::MAX_REBELS];
+    }
 
-    if citizen.loyalty_score < 20 {
+    // Check if the citizen can join the rebellion
+    if !citizen.is_imprisoned {
         let citizen_data = Citizen {
             authority: citizen.authority,
             loyalty_score: citizen.loyalty_score,
@@ -38,20 +51,25 @@ pub fn start_rebellion(ctx: Context<StartRebellion>, rebellion_scale: u64) -> Re
 
         rebels.add_rebel(citizen_data)?;
 
-        
+        // Update junta state
         junta.dissent_level = junta.dissent_level.saturating_add(1);
         junta.control_level = junta.control_level.saturating_sub(1);
 
+        // Update citizen state
+        citizen.loyalty_score = citizen.loyalty_score.saturating_sub(5);
+        citizen.is_dissident = true;
 
-        let mut updated_citizen = ctx.accounts.citizen.clone();
-        updated_citizen.loyalty_score = updated_citizen.loyalty_score.saturating_sub(5);
+        msg!("Citizen joined the rebellion. Dissent increased.");
+    } else {
+        msg!("Citizen unable to join the rebellion.");
     }
 
+    // Check if the rebellion succeeds
     if junta.control_level <= 0 {
         junta.is_overthrown = true;
         msg!("The Junta has been overthrown by the rebellion!");
     } else {
-        msg!("The rebellion was unsuccessful, but dissent has increased.");
+        msg!("The rebellion continues. Junta control: {}", junta.control_level);
     }
 
     Ok(())

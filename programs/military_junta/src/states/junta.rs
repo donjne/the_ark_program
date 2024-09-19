@@ -16,6 +16,7 @@ pub struct Junta {
     pub symbol: String,
     pub supply: u32,
     pub minteds: u32,
+    pub vault: Pubkey,
     pub collection_price: u64,
     pub bump: u8,
 }
@@ -60,7 +61,7 @@ impl Junta {
     + 4   // u32 (supply)
     + 4   // u32 (minteds)
     + 8   // u64 (price)
-    + 32  // Pubkey (treasury_account)
+    + 32  // Pubkey (vault)
     + 1;  // u8 (bump)
 }
 

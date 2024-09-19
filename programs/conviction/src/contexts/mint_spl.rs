@@ -1,6 +1,6 @@
 use crate::errors::ErrorCode;
 use anchor_lang::prelude::*;
-use crate::states::junta::Junta;
+use crate::states::governance::Governance;
 use anchor_spl::{
     associated_token::AssociatedToken,
     token::{mint_to, Mint, MintTo, Token, TokenAccount, initialize_mint, InitializeMint},
@@ -11,14 +11,12 @@ use anchor_spl::{
         Metadata as Metaplex,
     },
 };
-use crate::states::citizen::Citizen;
-
 
 #[derive(Accounts)]
 #[instruction(params: InitTokenParams)]
 pub struct InitializeToken<'info> {
     #[account(mut)]
-    pub junta: Account<'info, Junta>,
+    pub governance: Box<Account<'info, Governance>>,
     
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -28,7 +26,7 @@ pub struct InitializeToken<'info> {
         payer = payer,
         mint::decimals = params.decimals,
         mint::authority = mint,
-        seeds = [Junta::SPL_PREFIX_SEED, junta.key().as_ref(), junta.symbol.as_bytes()], 
+        seeds = [Governance::SPL_PREFIX_SEED, governance.key().as_ref(), params.symbol.as_bytes()], 
         bump
     )]
     pub mint: Account<'info, Mint>,
@@ -48,27 +46,24 @@ pub struct MintTokens<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     #[account(mut)]
-    pub junta: Account<'info, Junta>,
+    pub governance: Box<Account<'info, Governance>>,
     #[account(mut)]
     pub mint: Account<'info, Mint>,
-    #[account(mut)]
-    pub citizen: Account<'info, Citizen>,
 
     #[account(
         init_if_needed,
         payer = payer,
         associated_token::mint = mint,
-        associated_token::authority = junta,
+        associated_token::authority = governance,
         associated_token::token_program = token_program,
-        constraint = junta_ata.key() == junta.vault @ ErrorCode::InvalidJuntaVault
     )]
-    pub junta_ata: Account<'info, TokenAccount>,
+    pub governance_ata: Account<'info, TokenAccount>,
 
     #[account(
         init_if_needed,
         payer = payer,
         associated_token::mint = mint,
-        associated_token::authority = citizen,
+        associated_token::authority = payer,
         associated_token::token_program = token_program,
     )]
     pub citizen_ata: Account<'info, TokenAccount>,
@@ -91,27 +86,19 @@ pub fn initialize_token(
     ctx: Context<InitializeToken>,
     params: InitTokenParams
 ) -> Result<()> {
-    let junta = &ctx.accounts.junta;
-    let junta_key = junta.key();
+    let governance = &ctx.accounts.governance;
+    let governance_key = governance.key();
+    let payer = &ctx.accounts.payer.key();
+
 
 
     let metadata_seeds = &[
-        Junta::SPL_PREFIX_SEED,
-        junta_key.as_ref(),
-        junta.symbol.as_bytes(),
+        Governance::SPL_PREFIX_SEED,
+        governance_key.as_ref(),
+        params.symbol.as_bytes(),
         &[ctx.bumps.mint]
     ];
     let signer = &[&metadata_seeds[..]];
-
-    // Ensure only the junta leader can initialize the mint
-    if junta.leader != ctx.accounts.payer.key() {
-        return Err(ErrorCode::Unauthorized.into());
-    }
-
-    // Ensure supply has not been reached
-    if junta.minteds >= junta.supply {
-        return Err(ErrorCode::SupplyReached.into());
-    }
 
     // Initialize SPL Token Mint
     let cpi_context = CpiContext::new(
@@ -121,11 +108,11 @@ pub fn initialize_token(
             rent: ctx.accounts.rent.to_account_info(),
         },
     );
-    initialize_mint(cpi_context, params.decimals, &junta.key(), Some(&junta.key()))?;
+    initialize_mint(cpi_context, params.decimals, &payer.key(), Some(&governance.key()))?;
 
     let token_data = DataV2 {
-        name: params.name,
-        symbol: params.symbol,
+        name: params.name.clone(),
+        symbol: params.symbol.clone(),
         uri: params.uri,
         seller_fee_basis_points: 500,
         creators: None, // creators list
@@ -161,31 +148,21 @@ pub fn initialize_token(
 }
 
 pub fn mint_tokens(ctx: Context<MintTokens>, amount_to_treasury: u64, amount_to_citizen: u64) -> Result<()> {
-    let junta = &mut ctx.accounts.junta;
-    
-    // Checking if the payer is the junta leader
-    if junta.leader != ctx.accounts.payer.key() {
-        return Err(ErrorCode::Unauthorized.into());
-    }
+    let governance = &mut ctx.accounts.governance;
 
-    // Checking if the minting limit has been reached
-    if junta.minteds >= junta.supply {
-        return Err(ErrorCode::SupplyReached.into());
-    }
 
     // Checking for overflow
     let total_mint_amount = amount_to_treasury.checked_add(amount_to_citizen)
         .ok_or(ErrorCode::Overflow)?;
 
     // Checking if the new total minted would exceed supply
-    if junta.minteds as u64 + total_mint_amount > junta.supply as u64 {
+    if governance.spl_minted as u64 + total_mint_amount > governance.total_spl_token_supply as u64 {
         return Err(ErrorCode::ExceedsSupply.into());
     }
 
-    // Minting to junta treasury
     let cpi_accounts = MintTo {
         mint: ctx.accounts.mint.to_account_info(),
-        to: ctx.accounts.junta_ata.to_account_info(),
+        to: ctx.accounts.governance_ata.to_account_info(),
         authority: ctx.accounts.payer.to_account_info(),
     };
     let cpi_program = ctx.accounts.token_program.to_account_info();
@@ -203,15 +180,15 @@ pub fn mint_tokens(ctx: Context<MintTokens>, amount_to_treasury: u64, amount_to_
     mint_to(cpi_ctx, amount_to_citizen)?;
 
     // Using checked_add for safety
-    junta.minteds = junta.minteds.checked_add(total_mint_amount as u32)
+    governance.spl_minted = governance.spl_minted.checked_add(total_mint_amount as u32)
         .ok_or(ErrorCode::Overflow)?;
 
     // Emiting an event for off-chain tracking
     emit!(MintEvent {
-        junta: junta.key(),
+        governance: governance.key(),
         treasury_amount: amount_to_treasury,
         citizen_amount: amount_to_citizen,
-        total_minted: junta.minteds,
+        total_minted: governance.spl_minted,
     });
 
     Ok(())
@@ -219,7 +196,7 @@ pub fn mint_tokens(ctx: Context<MintTokens>, amount_to_treasury: u64, amount_to_
 
 #[event]
 pub struct MintEvent {
-    pub junta: Pubkey,
+    pub governance: Pubkey,
     pub treasury_amount: u64,
     pub citizen_amount: u64,
     pub total_minted: u32,

@@ -2,8 +2,7 @@ use anchor_lang::prelude::*;
 use crate::states::citizen::Citizen;
 use crate::errors::ErrorCode;
 
-const MAX_REBELS: usize = 10;
-
+pub const MAX_REBELS: usize = 10;
 #[account]
 pub struct Rebel {
     pub rebels: [Option<Citizen>; MAX_REBELS], 
@@ -11,6 +10,12 @@ pub struct Rebel {
 }
 
 impl Rebel {
+    pub const MAX_REBELS: usize = 10;
+    
+    pub const SIZE: usize = 
+        (Self::MAX_REBELS * std::mem::size_of::<Option<Citizen>>()) + // Size of rebels array
+        1; // Size of count (u8)
+
     pub fn add_rebel(&mut self, citizen: Citizen) -> Result<()> {
         require!(self.count < MAX_REBELS as u8, ErrorCode::MaxRebelsReached);
         

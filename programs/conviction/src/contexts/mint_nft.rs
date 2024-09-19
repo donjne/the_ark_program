@@ -1,6 +1,5 @@
-use crate::errors::ErrorCode;
 use anchor_lang::prelude::*;
-use crate::states::junta::{Junta, MintNftArgs};
+use crate::states::governance::{Governance, MintNftArgs};
 
 use anchor_lang::solana_program::account_info::AccountInfo;
 use anchor_lang::solana_program::program::invoke_signed;
@@ -18,7 +17,6 @@ use anchor_spl::token_interface::{spl_token_metadata_interface, Mint};
 use anchor_spl::token_interface::{SetAuthority, TokenAccount};
 use spl_token_metadata_interface::state::TokenMetadata;
 use spl_type_length_value::variable_len_pack::VariableLenPack;
-use crate::states::citizen::Citizen;
 
 
 #[derive(Accounts)]
@@ -28,28 +26,25 @@ pub struct MintNft<'info> {
     pub signer: Signer<'info>,
 
     #[account(mut)]
-    pub junta: Account<'info, Junta>,
+    pub governance: Box<Account<'info, Governance>>,
 
     #[account(
         init,
         payer = signer,
         mint::decimals = 0,
         mint::authority = signer,
-        extensions::metadata_pointer::authority = junta,
+        extensions::metadata_pointer::authority = signer,
         extensions::metadata_pointer::metadata_address = mint,
-        seeds = [Junta::NFT_PREFIX_SEED, junta.key().as_ref(), junta.symbol.as_bytes()], 
+        seeds = [Governance::NFT_PREFIX_SEED, governance.key().as_ref(), args.symbol.as_bytes()], 
         bump
     )]
     pub mint: InterfaceAccount<'info, Mint>,
 
-    #[account(mut)]
-    pub citizen: Account<'info, Citizen>,
-
     #[account(
-        init,
+        init_if_needed,
         payer = signer,
         associated_token::mint = mint,
-        associated_token::authority = citizen,
+        associated_token::authority = signer,
         associated_token::token_program = token_program,
     )]
     pub citizen_ata: InterfaceAccount<'info, TokenAccount>,
@@ -61,37 +56,29 @@ pub struct MintNft<'info> {
 }
 
 pub fn mint_nft(ctx: Context<MintNft>, args: MintNftArgs) -> Result<()> {
-    let junta = &mut ctx.accounts.junta;
-    let junta_key = junta.key();
+    let governance = &mut ctx.accounts.governance;
+    let governance_key = governance.key();
 
     let seeds = &[
-        Junta::NFT_PREFIX_SEED,
-        junta_key.as_ref(),
-        junta.symbol.as_bytes(),
+        Governance::NFT_PREFIX_SEED,
+        governance_key.as_ref(),
+        args.symbol.as_bytes(),
         &[ctx.bumps.mint]
     ];
 
     let signer = &[&seeds[..]];
 
-    if junta.leader != ctx.accounts.signer.key() {
-        return Err(ErrorCode::Unauthorized.into());
-    }
-
-    if junta.minteds >= junta.supply {
-        return Err(ErrorCode::SupplyReached.into());
-    }
-
     let from_account = &ctx.accounts.citizen_ata;
-    let mut to_account = junta.clone(); 
+    let mut to_account = governance.clone(); 
 
     let transfer_instruction =
-        system_instruction::transfer(&from_account.key(), &to_account.key(), junta.collection_price);
+        system_instruction::transfer(&from_account.key(), &to_account.key(), governance.collection_price);
 
     anchor_lang::solana_program::program::invoke(
         &transfer_instruction,
         &[
-            ctx.accounts.citizen_ata.to_account_info(),
-            junta.to_account_info(),
+            from_account.to_account_info(),
+            to_account.to_account_info(),
             ctx.accounts.system_program.to_account_info(),
         ],
     )?;
@@ -100,7 +87,7 @@ pub fn mint_nft(ctx: Context<MintNft>, args: MintNftArgs) -> Result<()> {
 
     let token_metadata = TokenMetadata {
         name: args.name.clone(),
-        symbol: junta.symbol.clone(),
+        symbol: args.symbol.clone(),
         uri: args.uri.clone(),
         ..Default::default()
     };
@@ -124,11 +111,11 @@ pub fn mint_nft(ctx: Context<MintNft>, args: MintNftArgs) -> Result<()> {
     let init_token_meta_data_ix = &spl_token_metadata_interface::instruction::initialize(
         &Token2022::id(),
         &ctx.accounts.mint.key(),
-        &junta.to_account_info().key,
+        &ctx.accounts.signer.to_account_info().key(),
         &ctx.accounts.mint.key(),
-        &ctx.accounts.signer.to_account_info().key,
+        &ctx.accounts.signer.to_account_info().key(),
         args.name.clone(),
-        junta.symbol.clone(),
+        args.symbol.clone(),
         args.uri.clone(),
     );
 
@@ -136,7 +123,7 @@ pub fn mint_nft(ctx: Context<MintNft>, args: MintNftArgs) -> Result<()> {
         init_token_meta_data_ix,
         &[
             ctx.accounts.mint.to_account_info().clone(),
-            junta.to_account_info().clone(),
+            governance.to_account_info().clone(),
             ctx.accounts.signer.to_account_info().clone(),
         ],
         signer,
@@ -166,15 +153,16 @@ pub fn mint_nft(ctx: Context<MintNft>, args: MintNftArgs) -> Result<()> {
         None,
     )?;
 
-    junta.minteds += 1;
+    governance.nft_minted += 1;
 
     emit!(NftMinted {
-        junta: junta.key(),
+        conviction_governance: governance.key(),
         mint: ctx.accounts.mint.key(),
-        owner: ctx.accounts.citizen.key(),
+        owner: ctx.accounts.signer.key(),
         name: args.name,
+        symbol: args.symbol,
         uri: args.uri,
-        cost: junta.collection_price
+        cost: governance.collection_price
     });
 
     Ok(())
@@ -183,41 +171,11 @@ pub fn mint_nft(ctx: Context<MintNft>, args: MintNftArgs) -> Result<()> {
 
 #[event]
 pub struct NftMinted {
-    pub junta: Pubkey,
+    pub conviction_governance: Pubkey,
     pub mint: Pubkey,
     pub owner: Pubkey,
     pub name: String,
+    pub symbol: String,
     pub uri: String,
     pub cost: u64
-}
-
-
-#[derive(Accounts)]
-pub struct UpdateNftPrice<'info> {
-    #[account(mut)]
-    pub leader: Signer<'info>,
-    #[account(mut, has_one = leader @ ErrorCode::Unauthorized)]
-    pub junta: Account<'info, Junta>,
-}
-
-pub fn update_nft_price(ctx: Context<UpdateNftPrice>, new_price: u64) -> Result<()> {
-    let junta = &mut ctx.accounts.junta;
-
-    if junta.leader != ctx.accounts.leader.key() {
-        return Err(ErrorCode::Unauthorized.into());
-    }
-    junta.collection_price = new_price;
-    
-    emit!(NftPriceUpdated {
-        junta: junta.key(),
-        new_price,
-    });
-    
-    Ok(())
-}
-
-#[event]
-pub struct NftPriceUpdated {
-    pub junta: Pubkey,
-    pub new_price: u64,
 }

@@ -5,13 +5,14 @@ use crate::state::analytics::ArkAnalytics;
 #[derive(Accounts)]
 pub struct RegisterGovernment<'info> {
     #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(mut)]
     pub ark_analytics: Account<'info, ArkAnalytics>,
     #[account(init, payer = payer, space = 8 + 32 + 32 + 32 + 32)]
     pub state_info: Account<'info, StateInfo>,
+    #[account(mut)]
     /// CHECK: This is the program ID of the specific government type
     pub government_program: UncheckedAccount<'info>,
-    #[account(mut)]
-    pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
 }
 
