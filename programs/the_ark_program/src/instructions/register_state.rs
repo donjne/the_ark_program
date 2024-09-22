@@ -8,7 +8,7 @@ pub struct RegisterGovernment<'info> {
     pub payer: Signer<'info>,
     #[account(mut)]
     pub ark_analytics: Account<'info, ArkAnalytics>,
-    #[account(init, payer = payer, space = 8 + 32 + 32 + 32 + 32)]
+    #[account(init, payer = payer, space = StateInfo::LEN)]
     pub state_info: Account<'info, StateInfo>,
     #[account(mut)]
     /// CHECK: This is the program ID of the specific government type
@@ -24,6 +24,27 @@ pub struct StateInfo {
     pub creator: Pubkey,
     pub created_at: i64,
     pub program_id: Pubkey,
+}
+
+impl StateInfo {
+    pub const MAX_NAME_LENGTH: usize = 50; // Adjust this value as needed
+
+    pub const LEN: usize = 8 + // discriminator
+        4 + Self::MAX_NAME_LENGTH + // name (String)
+        1 + // government_type (assuming it's an enum with a small number of variants)
+        32 + // creator (Pubkey)
+        8 + // created_at (i64)
+        32; // program_id (Pubkey)
+
+    pub fn new(name: String, government_type: GovernmentType, creator: Pubkey, program_id: Pubkey) -> Self {
+        Self {
+            name,
+            government_type,
+            creator,
+            created_at: Clock::get().unwrap().unix_timestamp,
+            program_id,
+        }
+    }
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Debug)]

@@ -7,7 +7,7 @@ use crate::constants::*;
 
 #[account]
 pub struct ArkAnalytics {
-    pub no_of_governments: u64,
+    pub total_governments: u64,
     pub governments: Vec<Pubkey>,
     pub polls: u64,
     pub approved: u64,

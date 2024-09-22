@@ -7,7 +7,11 @@ skip-lint = false
 [programs.localnet]
 absolute_monarchy = "ADp9DgS9ZpsVDCXb4ysDjJoB1d8cL3CUmm4ErwVtqWzu"
 conviction = "ATsZoBzoVyPF97HLn9kt2ffNSGcnYwUApbNxfsVknNVr"
+flat_dao = "FNF2M3rVeAhQ28VTCNVYzfKTnX1ZcStGuDZ9geVzY38Q"
 military_junta = "2fPj7RDkm4FJouSo6DE6vHbE5rjTvdZPnnxJUgFvYVm2"
+polycentric = "5MkjpkHC6FuXQgkjJiTc6QNNAzYyAHfRFHyQFNjXT1kv"
+sociocracy = "5fgkDxG2a88FoKvcfEMToAwouPMXesTV25n56tFg68Vw"
+sortition = "7naXQjiC6W4Vz28Z4cPjBqjWVFVbRipVrZ9VQsuUAPcg"
 standard = "7aQvq1fEiDXqK36H7mW8MSTGdnHn6XAHDd9pauZwZXGQ"
 the_ark_program = "48qaGS4sA7bqiXYE6SyzaFiAb7QNit1A7vdib7LXhW2V"
 

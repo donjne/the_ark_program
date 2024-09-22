@@ -7,6 +7,11 @@ name = "absolute_monarchy"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
+ "anchor-spl",
+ "mpl-token-metadata",
+ "spl-token-metadata-interface",
+ "spl-type-length-value",
+ "the_ark_program",
 ]
 
 [[package]]
@@ -998,6 +1003,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "835a3dc7d1ec9e75e2b5fb4ba75396837112d2060b03f7d43bc1897c7f7211da"
 
 [[package]]
+name = "flat_dao"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "mpl-token-metadata",
+ "spl-token-metadata-interface",
+ "spl-type-length-value",
+ "the_ark_program",
+]
+
+[[package]]
 name = "fnv"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1485,6 +1502,18 @@ name = "percent-encoding"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
+
+[[package]]
+name = "polycentric"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "mpl-token-metadata",
+ "spl-token-metadata-interface",
+ "spl-type-length-value",
+ "the_ark_program",
+]
 
 [[package]]
 name = "polyval"
@@ -1982,6 +2011,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
 
 [[package]]
+name = "sociocracy"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "mpl-token-metadata",
+ "spl-token-metadata-interface",
+ "spl-type-length-value",
+ "the_ark_program",
+]
+
+[[package]]
 name = "solana-frozen-abi"
 version = "1.18.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2185,6 +2226,18 @@ dependencies = [
  "subtle",
  "thiserror",
  "zeroize",
+]
+
+[[package]]
+name = "sortition"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "mpl-token-metadata",
+ "spl-token-metadata-interface",
+ "spl-type-length-value",
+ "the_ark_program",
 ]
 
 [[package]]
