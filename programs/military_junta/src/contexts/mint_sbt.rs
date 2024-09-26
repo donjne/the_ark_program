@@ -45,7 +45,7 @@ pub struct MintJuntaSbt<'info> {
     pub token_program: Program<'info, Token2022>,
 }
 
-pub fn mint_sbt(ctx: Context<MintJuntaSbt>, mut args: InitializeSbtArgs) -> Result<()> {
+pub fn mint_sbt(ctx: Context<MintJuntaSbt>, args: InitializeSbtArgs) -> Result<()> {
     let junta = &mut ctx.accounts.junta;
     let junta_mint = &ctx.accounts.junta_mint;
     let token_program = &ctx.accounts.token_program;
@@ -58,7 +58,7 @@ pub fn mint_sbt(ctx: Context<MintJuntaSbt>, mut args: InitializeSbtArgs) -> Resu
         return Err(ErrorCode::Unauthorized.into());
     }
 
-    if junta.minteds >= junta.supply {
+    if junta.sbt_minted >= junta.total_sbt_token_supply {
         return Err(ErrorCode::SupplyReached.into());
     }
 
@@ -104,11 +104,9 @@ pub fn mint_sbt(ctx: Context<MintJuntaSbt>, mut args: InitializeSbtArgs) -> Resu
         token_program,
     )?;
 
-    args.transferrable = false;
-
     initialize_non_transferrable_extension(junta_mint, token_program)?;
 
-    junta.minteds += 1;
+    junta.sbt_minted += 1;
 
     Ok(())
 }

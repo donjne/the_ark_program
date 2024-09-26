@@ -11,6 +11,8 @@ pub mod mint_sbt;
 pub mod mint_spl;
 pub mod stake_nft;
 pub mod unstake_nft;
+pub mod add;
+pub mod make_decision;
 
 
 pub use cancel_proposal::*;
@@ -26,3 +28,5 @@ pub use mint_sbt::*;
 pub use mint_spl::*;
 pub use stake_nft::*;
 pub use unstake_nft::*;
+pub use add::*;
+pub use make_decision::*;

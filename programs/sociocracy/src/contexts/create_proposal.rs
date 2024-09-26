@@ -10,14 +10,15 @@ pub struct CreateProposal<'info> {
     #[account(
         init,
         payer = proposer,
-        space = Proposal::space(),
+        space = Proposal::SPACE,
         seeds = [b"proposal", circle.key().as_ref(), description.as_bytes()],
         bump
     )]
-    pub proposal: Account<'info, Proposal>,
+    pub proposal: Box<Account<'info, Proposal>>,
     #[account(mut)]
     pub proposer: Signer<'info>,
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 pub fn create_proposal(ctx: Context<CreateProposal>, description: String) -> Result<()> {
@@ -34,6 +35,7 @@ pub fn create_proposal(ctx: Context<CreateProposal>, description: String) -> Res
     proposal.description = description;
     proposal.votes = vec![];
     proposal.status = ProposalStatus::Active;
+    proposal.bump = ctx.bumps.proposal;
 
     circle.proposals.push(proposal.key());
 

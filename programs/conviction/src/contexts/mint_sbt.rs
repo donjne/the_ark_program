@@ -30,7 +30,6 @@ pub struct MintConvictionSbt<'info> {
         payer = payer,
         associated_token::mint = mint,
         associated_token::authority = payer,
-        associated_token::token_program = token_program,
     )]
     pub citizen_ata: InterfaceAccount<'info, TokenAccount>,
 
@@ -40,7 +39,7 @@ pub struct MintConvictionSbt<'info> {
     pub token_program: Program<'info, Token2022>,
 }
 
-pub fn mint_sbt(ctx: Context<MintConvictionSbt>, mut args: InitializeSbtArgs) -> Result<()> {
+pub fn mint_sbt(ctx: Context<MintConvictionSbt>, args: InitializeSbtArgs) -> Result<()> {
     let governance = &mut ctx.accounts.governance;
     let mint = &ctx.accounts.mint;
     let token_program = &ctx.accounts.token_program;
@@ -91,11 +90,11 @@ pub fn mint_sbt(ctx: Context<MintConvictionSbt>, mut args: InitializeSbtArgs) ->
         token_program,
     )?;
 
-    args.transferrable = false;
-
     initialize_non_transferrable_extension(mint, token_program)?;
 
     governance.sbt_minted += 1;
+    governance.total_sbt_token_supply += 1;
+
 
     Ok(())
 }

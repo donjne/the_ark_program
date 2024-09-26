@@ -17,8 +17,7 @@ pub struct UnstakeNftFromProposal<'info> {
     )]
     pub stake: Box<Account<'info, StakeAccount>>,
     #[account(
-        mut,
-        constraint = nft_mint.key() == governance.nft_mint @ ErrorCode::InvalidNFTMint
+        mut
     )]
     pub nft_mint: Account<'info, Mint>,
     #[account(mut)]
@@ -28,14 +27,12 @@ pub struct UnstakeNftFromProposal<'info> {
         payer = user,
         associated_token::mint = nft_mint,
         associated_token::authority = user,
-        associated_token::token_program = token_program,
     )]
     pub user_nft_account: Account<'info, TokenAccount>,
     #[account(
         mut,
         associated_token::mint = nft_mint,
         associated_token::authority = governance,
-        associated_token::token_program = token_program,
     )]
     pub proposal_nft_account: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,
@@ -52,6 +49,9 @@ pub fn unstake_nft(ctx: Context<UnstakeNftFromProposal>) -> Result<()> {
     require!(clock.unix_timestamp >= stake_account.lock_end, ErrorCode::StakeLocked);
     require!(stake_account.amount >= 1, ErrorCode::InvalidNFTStake);
 
+    let governance_key = ctx.accounts.governance.key();
+
+    let unstake_seeds = &[b"governance", governance_key.as_ref(), &[ctx.accounts.governance.bump]];
     // Transfer the NFT back to the user
     transfer(
         CpiContext::new_with_signer(
@@ -61,10 +61,7 @@ pub fn unstake_nft(ctx: Context<UnstakeNftFromProposal>) -> Result<()> {
                 to: ctx.accounts.user_nft_account.to_account_info(),
                 authority: ctx.accounts.governance.to_account_info(),
             },
-            &[&[
-                b"governance",
-                &[ctx.accounts.governance.bump],
-            ]],
+            &[unstake_seeds]
         ),
         1, // NFTs always have an amount of 1
     )?;

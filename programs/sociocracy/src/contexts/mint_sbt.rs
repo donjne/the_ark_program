@@ -2,16 +2,16 @@ use anchor_lang::prelude::*;
 use anchor_spl::token_2022::spl_token_2022::instruction::AuthorityType;
 use anchor_spl::token_interface::{Mint, Token2022, TokenAccount};
 use anchor_spl::associated_token::AssociatedToken;
-use crate::states::governance::{Governance, InitializeSbtArgs};
+use crate::states::circle::{Circle, InitializeSbtArgs};
 use the_ark_program::{initialize_token_metadata_extension, mint_to_token_account, set_account_or_mint_authority, update_account_lamports_to_minimum_balance, initialize_token_group_extension, initialize_non_transferrable_extension};
 
 #[derive(Accounts)]
-pub struct MintConvictionSbt<'info> {
+pub struct MintSbt<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     
     #[account(mut)]
-    pub governance: Box<Account<'info, Governance>>,
+    pub circle: Box<Account<'info, Circle>>,
     
     #[account(
         init,
@@ -40,14 +40,13 @@ pub struct MintConvictionSbt<'info> {
     pub token_program: Program<'info, Token2022>,
 }
 
-pub fn mint_sbt(ctx: Context<MintConvictionSbt>, mut args: InitializeSbtArgs) -> Result<()> {
-    let governance = &mut ctx.accounts.governance;
+pub fn mint_sbt(ctx: Context<MintSbt>, args: InitializeSbtArgs) -> Result<()> {
+    let circle = &mut ctx.accounts.circle;
     let mint = &ctx.accounts.mint;
     let token_program = &ctx.accounts.token_program;
     let system_program = &ctx.accounts.system_program;
     let payer = &ctx.accounts.payer;
     let citizen_ata = &ctx.accounts.citizen_ata;
-
 
     initialize_token_group_extension(
         u32::MAX,
@@ -76,11 +75,6 @@ pub fn mint_sbt(ctx: Context<MintConvictionSbt>, mut args: InitializeSbtArgs) ->
         system_program.to_account_info(),
     )?;
 
-    // let citizen_token_account = anchor_spl::associated_token::get_associated_token_address(
-    //     &citizen_pubkey, 
-    //     &junta_mint.key(),
-    // ); // add citizen_pubkey as parameter
-
     mint_to_token_account(1, mint, payer, citizen_ata, token_program)?;
 
     set_account_or_mint_authority(
@@ -91,11 +85,28 @@ pub fn mint_sbt(ctx: Context<MintConvictionSbt>, mut args: InitializeSbtArgs) ->
         token_program,
     )?;
 
-    args.transferrable = false;
-
     initialize_non_transferrable_extension(mint, token_program)?;
 
-    governance.sbt_minted += 1;
+    circle.sbt_minted += 1;
+
+    emit!(SbtMinted {
+        circle: circle.key(),
+        mint: mint.key(),
+        owner: payer.key(),
+        name: args.name,
+        symbol: args.symbol,
+        uri: args.uri,
+    });
 
     Ok(())
+}
+
+#[event]
+pub struct SbtMinted {
+    pub circle: Pubkey,
+    pub mint: Pubkey,
+    pub owner: Pubkey,
+    pub name: String,
+    pub symbol: String,
+    pub uri: String,
 }

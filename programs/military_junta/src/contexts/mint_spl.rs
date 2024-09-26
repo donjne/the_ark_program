@@ -59,8 +59,6 @@ pub struct MintTokens<'info> {
         payer = payer,
         associated_token::mint = mint,
         associated_token::authority = junta,
-        associated_token::token_program = token_program,
-        constraint = junta_ata.key() == junta.vault @ ErrorCode::InvalidJuntaVault
     )]
     pub junta_ata: Account<'info, TokenAccount>,
 
@@ -109,7 +107,7 @@ pub fn initialize_token(
     }
 
     // Ensure supply has not been reached
-    if junta.minteds >= junta.supply {
+    if junta.spl_minted >= junta.total_spl_token_supply {
         return Err(ErrorCode::SupplyReached.into());
     }
 
@@ -169,7 +167,7 @@ pub fn mint_tokens(ctx: Context<MintTokens>, amount_to_treasury: u64, amount_to_
     }
 
     // Checking if the minting limit has been reached
-    if junta.minteds >= junta.supply {
+    if junta.spl_minted >= junta.total_spl_token_supply {
         return Err(ErrorCode::SupplyReached.into());
     }
 
@@ -178,7 +176,7 @@ pub fn mint_tokens(ctx: Context<MintTokens>, amount_to_treasury: u64, amount_to_
         .ok_or(ErrorCode::Overflow)?;
 
     // Checking if the new total minted would exceed supply
-    if junta.minteds as u64 + total_mint_amount > junta.supply as u64 {
+    if junta.spl_minted + total_mint_amount > junta.total_spl_token_supply {
         return Err(ErrorCode::ExceedsSupply.into());
     }
 
@@ -203,7 +201,7 @@ pub fn mint_tokens(ctx: Context<MintTokens>, amount_to_treasury: u64, amount_to_
     mint_to(cpi_ctx, amount_to_citizen)?;
 
     // Using checked_add for safety
-    junta.minteds = junta.minteds.checked_add(total_mint_amount as u32)
+    junta.spl_minted = junta.spl_minted.checked_add(total_mint_amount)
         .ok_or(ErrorCode::Overflow)?;
 
     // Emiting an event for off-chain tracking
@@ -211,7 +209,7 @@ pub fn mint_tokens(ctx: Context<MintTokens>, amount_to_treasury: u64, amount_to_
         junta: junta.key(),
         treasury_amount: amount_to_treasury,
         citizen_amount: amount_to_citizen,
-        total_minted: junta.minteds,
+        total_minted: junta.spl_minted,
     });
 
     Ok(())
@@ -222,6 +220,6 @@ pub struct MintEvent {
     pub junta: Pubkey,
     pub treasury_amount: u64,
     pub citizen_amount: u64,
-    pub total_minted: u32,
+    pub total_minted: u64,
 }
 

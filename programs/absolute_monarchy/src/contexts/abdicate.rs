@@ -1,29 +1,53 @@
 use anchor_lang::prelude::*;
-use crate::states::Monarch;
+use crate::states::{Monarch, Kingdom};
 use crate::error::AbsoluteMonarchyError;
 
 #[derive(Accounts)]
 pub struct Abdicate<'info> {
-    #[account(mut, has_one = authority @ AbsoluteMonarchyError::NotMonarch)]
-    pub monarch: Account<'info, Monarch>,
+    #[account(
+        mut,
+        has_one = monarch @ AbsoluteMonarchyError::InvalidMonarch,
+    )]
+    pub kingdom: Box<Account<'info, Kingdom>>,
+
+    #[account(
+        mut,
+        has_one = authority @ AbsoluteMonarchyError::NotMonarch,
+        constraint = monarch.key() == kingdom.monarch @ AbsoluteMonarchyError::MonarchKingdomMismatch,
+    )]
+    pub monarch: Box<Account<'info, Monarch>>,
 
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    /// CHECK: This account will be the new monarch
-    pub heir: UncheckedAccount<'info>,
+    #[account(init, payer = authority, space = Monarch::SPACE)]
+    pub new_monarch: Box<Account<'info, Monarch>>,
+
+    pub system_program: Program<'info, System>,
 }
 
 pub fn abdicate(ctx: Context<Abdicate>, heir_name: String) -> Result<()> {
-    let monarch = &mut ctx.accounts.monarch;
-    monarch.authority = *ctx.accounts.heir.key;
-    monarch.name = heir_name;
-    monarch.coronation_date = Clock::get()?.unix_timestamp;
-    // Reset some stats for the new monarch
-    monarch.decrees_issued = 0;
-    monarch.wars_declared = 0;
-    monarch.royal_judgments = 0;
-    monarch.economic_policies_set = 0;
+    require!(!heir_name.is_empty(), AbsoluteMonarchyError::EmptyHeirName);
+
+    let old_monarch = &mut ctx.accounts.monarch;
+    let new_monarch = &mut ctx.accounts.new_monarch;
+    let kingdom = &mut ctx.accounts.kingdom;
+
+    // Update the kingdom with the new monarch
+    kingdom.monarch = new_monarch.key();
+    
+    // Initialize the new monarch
+    new_monarch.authority = new_monarch.key();
+    new_monarch.name = heir_name;
+    new_monarch.coronation_date = Clock::get()?.unix_timestamp;
+    new_monarch.decrees_issued = 0;
+    new_monarch.wars_declared = 0;
+    new_monarch.royal_judgments = 0;
+    new_monarch.economic_policies_set = 0;
+
+    old_monarch.abdication_date = Some(Clock::get()?.unix_timestamp);
+
+    msg!("Monarch {} has abdicated. Long live Monarch {}!", old_monarch.name, new_monarch.name);
 
     Ok(())
 }

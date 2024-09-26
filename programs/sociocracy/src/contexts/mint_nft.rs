@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use crate::states::governance::{Governance, MintNftArgs};
+use crate::states::circle::{Circle, MintNftArgs};
 
 use anchor_lang::solana_program::account_info::AccountInfo;
 use anchor_lang::solana_program::program::invoke_signed;
@@ -18,7 +18,6 @@ use anchor_spl::token_interface::{SetAuthority, TokenAccount};
 use spl_token_metadata_interface::state::TokenMetadata;
 use spl_type_length_value::variable_len_pack::VariableLenPack;
 
-
 #[derive(Accounts)]
 #[instruction(args: MintNftArgs)]
 pub struct MintNft<'info> {
@@ -35,7 +34,7 @@ pub struct MintNft<'info> {
         mint::authority = signer,
         extensions::metadata_pointer::authority = signer,
         extensions::metadata_pointer::metadata_address = mint,
-        seeds = [Governance::NFT_PREFIX_SEED, governance.key().as_ref(), args.symbol.as_bytes()], 
+        seeds = [Circle::NFT_PREFIX_SEED, circle.key().as_ref(), args.symbol.as_bytes()], 
         bump
     )]
     pub mint: InterfaceAccount<'info, Mint>,
@@ -68,8 +67,8 @@ pub fn mint_nft(ctx: Context<MintNft>, args: MintNftArgs) -> Result<()> {
 
     let signer = &[&seeds[..]];
 
-    let from_account = &ctx.accounts.citizen_ata;
-    let mut to_account = circle.clone(); 
+    let from_account = &ctx.accounts.signer;
+    let to_account = circle.to_account_info(); 
 
     let transfer_instruction =
         system_instruction::transfer(&from_account.key(), &to_account.key(), circle.collection_price);
@@ -78,12 +77,12 @@ pub fn mint_nft(ctx: Context<MintNft>, args: MintNftArgs) -> Result<()> {
         &transfer_instruction,
         &[
             from_account.to_account_info(),
-            to_account.to_account_info(),
+            to_account,
             ctx.accounts.system_program.to_account_info(),
         ],
     )?;
 
-    to_account.resources += 1;
+    circle.resources += 1;
 
     let token_metadata = TokenMetadata {
         name: args.name.clone(),
@@ -123,7 +122,7 @@ pub fn mint_nft(ctx: Context<MintNft>, args: MintNftArgs) -> Result<()> {
         init_token_meta_data_ix,
         &[
             ctx.accounts.mint.to_account_info().clone(),
-            governance.to_account_info().clone(),
+            circle.to_account_info().clone(),
             ctx.accounts.signer.to_account_info().clone(),
         ],
         signer,
@@ -153,25 +152,24 @@ pub fn mint_nft(ctx: Context<MintNft>, args: MintNftArgs) -> Result<()> {
         None,
     )?;
 
-    governance.nft_minted += 1;
+    circle.nft_minted += 1;
 
     emit!(NftMinted {
-        conviction_governance: governance.key(),
+        circle: circle.key(),
         mint: ctx.accounts.mint.key(),
         owner: ctx.accounts.signer.key(),
         name: args.name,
         symbol: args.symbol,
         uri: args.uri,
-        cost: governance.collection_price
+        cost: circle.collection_price
     });
 
     Ok(())
-
 }
 
 #[event]
 pub struct NftMinted {
-    pub conviction_governance: Pubkey,
+    pub circle: Pubkey,
     pub mint: Pubkey,
     pub owner: Pubkey,
     pub name: String,

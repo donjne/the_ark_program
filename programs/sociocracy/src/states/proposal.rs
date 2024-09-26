@@ -7,6 +7,7 @@ pub struct Proposal {
     pub description: String,
     pub votes: Vec<(Pubkey, bool)>, // (member, consent)
     pub status: ProposalStatus,
+    pub bump: u8,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq)]
@@ -20,12 +21,12 @@ impl Proposal {
     pub const MAX_DESCRIPTION_LENGTH: usize = 200;
     pub const MAX_VOTES: usize = 20;
 
-    pub fn space() -> usize {
+    pub const SPACE: usize =
         8 + // discriminator
         32 + // circle
         32 + // proposer
         4 + Self::MAX_DESCRIPTION_LENGTH + // description
         4 + (Self::MAX_VOTES * (32 + 1)) + // votes
-        1 // status
-    }
+        1 + // status
+        1;
 }

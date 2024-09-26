@@ -24,3 +24,21 @@ impl User {
         }).sum()
     }
 }
+
+#[account]
+pub struct UserMembership {
+    pub user: Pubkey,
+    pub dao: Pubkey,
+    pub voting_power: u64,
+    pub joined_at: i64,
+    pub bump: u8,
+}
+
+impl UserMembership {
+    pub const LEN: usize = 8 + // discriminator
+        32 + // user
+        32 + // dao
+        8 +  // voting_power
+        8 +  // joined_at
+        1;   // bump
+}

@@ -5,10 +5,12 @@ pub mod constants;
 pub mod instructions;
 pub mod utilities;
 mod errors;
+pub mod interface;
 
 pub use instructions::*;
 pub use state::*;
 pub use utilities::*;
+pub use interface::*;
 
 declare_id!("48qaGS4sA7bqiXYE6SyzaFiAb7QNit1A7vdib7LXhW2V");
 
@@ -109,3 +111,4 @@ pub mod the_ark_program {
 
 #[derive(Accounts)]
 pub struct Initialize {}
+

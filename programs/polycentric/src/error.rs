@@ -35,5 +35,35 @@ pub enum GovernanceError {
     #[msg("Invalid proposal")]
     InvalidProposal,
     #[msg("Maximum treasuries reached")]
-    MaxTreasuriesReached
+    MaxTreasuriesReached,
+    #[msg("Not enough voting power")]
+    InsufficientVotingPower,
+    #[msg("Already a member")]
+    AlreadyMember,
+    #[msg("Task has been completed")]
+    TaskAlreadyCompleted,
+    #[msg("Task Not Found")]
+    TaskNotFound,
+    #[msg("Account is missing")]
+    MissingAccount,
+    #[msg("Account required is missing")]
+    MissingRequiredAccount,
+    #[msg("SPL Mint is not valid")]
+    InvalidSPLMint,
+    #[msg("NFT Mint is not valid")]
+    InvalidNFTMint,
+    #[msg("Task is not valid")]
+    InvalidTask,
+    #[msg("Overflow error")]
+    Overflow,
+    #[msg("Supply has been exceeded")] 
+    ExceedsSupply,
+    #[msg("No governance token")] 
+    NoGovernanceTokenSpecified,
+    #[msg("Missing NFT config")] 
+    MissingNFTConfig,
+    #[msg("Missing SPL config")] 
+    MissingSPLConfig,
+    #[msg("Insufficient tokens")] 
+    InsufficientTokens
 }

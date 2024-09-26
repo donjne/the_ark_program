@@ -10,13 +10,15 @@ pub struct Supporters {
     pub supporters: [Option<Pubkey>; MAX_SUPPORTERS],
     pub support_amounts: [(Pubkey, u64); MAX_SUPPORT_AMOUNTS],
     pub count: u8,
+    pub bump: u8,
 }
 
 impl Supporters {
     pub const SIZE: usize = 8 + // Discriminator
     (MAX_SUPPORTERS * (1 + 32)) + // supporters array
     (MAX_SUPPORT_AMOUNTS * (32 + 8)) + // support_amounts array
-    1; // count
+    1 + // count
+    1; // bump
 
     pub fn add_supporter(&mut self, supporter: Pubkey) -> Result<()> {
         require!(self.count < MAX_SUPPORTERS as u8, ErrorCode::MaxSupportersReached);

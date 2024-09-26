@@ -1,23 +1,34 @@
 use anchor_lang::prelude::*;
-use crate::states::{Monarch, Policy};
+use crate::states::{Monarch, Policy, Kingdom};
 use crate::error::AbsoluteMonarchyError;
 
 #[derive(Accounts)]
 pub struct ImplementPolicy<'info> {
-    #[account(mut, has_one = authority @ AbsoluteMonarchyError::NotMonarch)]
-    pub monarch: Account<'info, Monarch>,
+    #[account(mut)]
+    pub kingdom: Box<Account<'info, Kingdom>>,
+
+    #[account(
+        mut,
+        has_one = authority @ AbsoluteMonarchyError::NotMonarch,
+        constraint = monarch.key() == kingdom.monarch @ AbsoluteMonarchyError::MonarchKingdomMismatch
+    )]
+    pub monarch: Box<Account<'info, Monarch>>,
 
     #[account(
         init,
         payer = authority,
-        space = Policy::space()
+        space = Policy::SPACE,
+        seeds = [b"policy", kingdom.key().as_ref()],
+        bump
     )]
-    pub policy: Account<'info, Policy>,
+    pub policy: Box<Account<'info, Policy>>,
 
     #[account(mut)]
     pub authority: Signer<'info>,
 
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
+
 }
 
 pub fn implement_policy(
@@ -28,6 +39,8 @@ pub fn implement_policy(
 ) -> Result<()> {
     let policy = &mut ctx.accounts.policy;
     let monarch = &mut ctx.accounts.monarch;
+    let kingdom = &mut ctx.accounts.kingdom;
+
 
     require!(title.len() <= Policy::MAXIMUM_TITLE_LENGTH, AbsoluteMonarchyError::PolicyTitleTooLong);
     require!(description.len() <= Policy::MAXIMUM_DESCRIPTION_LENGTH, AbsoluteMonarchyError::PolicyDescriptionTooLong);
@@ -43,6 +56,8 @@ pub fn implement_policy(
     policy.monarch = monarch.key();
 
     monarch.policies_implemented += 1;
+    kingdom.policies_implemented += 1;
+
 
     msg!("Policy '{}' implemented in jurisdiction '{}'", policy.title, policy.target_jurisdiction);
     Ok(())
@@ -50,7 +65,14 @@ pub fn implement_policy(
 
 #[derive(Accounts)]
 pub struct UpdatePolicy<'info> {
-    #[account(mut, has_one = authority @ AbsoluteMonarchyError::NotMonarch)]
+    #[account(mut)]
+    pub kingdom: Account<'info, Kingdom>,
+
+    #[account(
+        mut,
+        has_one = authority @ AbsoluteMonarchyError::NotMonarch,
+        constraint = monarch.key() == kingdom.monarch @ AbsoluteMonarchyError::MonarchKingdomMismatch
+    )]
     pub monarch: Account<'info, Monarch>,
 
     #[account(mut, has_one = monarch @ AbsoluteMonarchyError::NotPolicyOwner)]

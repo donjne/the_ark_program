@@ -9,14 +9,15 @@ pub struct ElectMember<'info> {
     #[account(
         init_if_needed,
         payer = payer,
-        space = Member::space(),
+        space = Member::SPACE,
         seeds = [b"member", member.key().as_ref()],
         bump
     )]
-    pub member: Account<'info, Member>,
+    pub member: Box<Account<'info, Member>>,
     #[account(mut)]
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 pub fn elect_member(ctx: Context<ElectMember>, name: String) -> Result<()> {

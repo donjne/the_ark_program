@@ -11,6 +11,7 @@ pub struct TransferLeadership<'info> {
     #[account(mut)]
     /// CHECK: This account is not read or written, just used as a Pubkey
     pub new_leader: UncheckedAccount<'info>,
+    pub system_program: Program<'info, System>,
 }
 
 pub fn transfer_leadership(ctx: Context<TransferLeadership>, new_leader: Pubkey) -> Result<()> {

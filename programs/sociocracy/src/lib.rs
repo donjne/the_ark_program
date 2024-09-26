@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{Token, Mint};
+use anchor_spl::{token::{Token, Mint}, associated_token::AssociatedToken};
 use the_ark_program::cpi::accounts::{RegisterGovernment, AddTokenToTreasury, CreateTreasury};
 use the_ark_program::program::TheArkProgram;
 use the_ark_program::state::analytics::ArkAnalytics;
@@ -40,9 +40,37 @@ pub mod sociocracy {
         Ok(())
     }
 
-    pub fn create_sociocracy_circle(ctx: Context<CreateCircle>, name: String) -> Result<()> {
-        create_circle(ctx, name)
+    pub fn create_sociocracy_circle(ctx: Context<CreateCircle>, args: CreateCircleArgs) -> Result<()> {
+        create_circle(ctx, args)
     }
+
+    pub fn add_new_member_to_circle(ctx: Context<AddMemberToCircle>) -> Result<()> {
+        add_member_to_circle(ctx)
+    }
+
+    pub fn initialize_new_member(ctx: Context<InitializeMember>, name: String) -> Result<()> {
+        initialize_member(ctx, name)
+    }
+
+    pub fn mint_new_sbt(ctx: Context<MintSbt>, args: InitializeSbtArgs) -> Result<()> {
+        mint_sbt::mint_sbt(ctx, args)
+    }
+
+    pub fn mint_new_nft(ctx: Context<MintNft>, args: MintNftArgs) -> Result<()> {
+        mint_nft::mint_nft(ctx, args)
+    }
+
+    pub fn initialize_spl_token(
+        ctx: Context<InitializeToken>,
+        params: InitTokenParams
+    ) -> Result<()> {
+        mint_spl::initialize_token(ctx, params)
+    }
+
+    pub fn mint_spl_tokens(ctx: Context<MintTokens>, amount_to_treasury: u64, amount_to_subject: u64) -> Result<()> {
+        mint_spl::mint_tokens(ctx, amount_to_treasury, amount_to_subject)
+    }
+
 
     pub fn elect_sociocracy_member(ctx: Context<ElectMember>, name: String) -> Result<()> {
         elect_member(ctx, name)
@@ -61,7 +89,10 @@ pub mod sociocracy {
         let cpi_accounts = CreateTreasury {
             treasury: ctx.accounts.treasury.to_account_info(),
             owner: ctx.accounts.circle.to_account_info(),
+            token_program: ctx.accounts.token_program.to_account_info(),
+            associated_token_program: ctx.accounts.associated_token_program.to_account_info(),
             system_program: ctx.accounts.system_program.to_account_info(),
+            rent: ctx.accounts.rent.to_account_info(),
         };
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
         
@@ -79,6 +110,7 @@ pub mod sociocracy {
             mint: ctx.accounts.mint.to_account_info(),
             owner: ctx.accounts.circle.to_account_info(),
             token_program: ctx.accounts.token_program.to_account_info(),
+            associated_token_program: ctx.accounts.associated_token_program.to_account_info(),
             system_program: ctx.accounts.system_program.to_account_info(),
             rent: ctx.accounts.rent.to_account_info(),
         };
@@ -112,6 +144,9 @@ pub struct CreateTreasuryCpi<'info> {
     pub admin: Signer<'info>,
     pub treasury_program: Program<'info, TheArkProgram>,
     pub system_program: Program<'info, System>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub token_program: Program<'info, Token>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 #[derive(Accounts)]
@@ -126,8 +161,9 @@ pub struct AddTokenToTreasuryCpi<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
     pub treasury_program: Program<'info, TheArkProgram>,
-    pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub token_program: Program<'info, Token>,
     pub rent: Sysvar<'info, Rent>,
 }
 

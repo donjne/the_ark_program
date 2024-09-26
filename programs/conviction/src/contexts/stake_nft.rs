@@ -20,7 +20,7 @@ pub struct StakeNftOnProposal<'info> {
     )]
     pub stake: Box<Account<'info, StakeAccount>>,
     #[account(
-        constraint = nft_mint.key() == governance.nft_mint @ ErrorCode::InvalidNFTMint
+        mut
     )]
     pub nft_mint: Account<'info, Mint>,
     #[account(mut)]
@@ -29,7 +29,6 @@ pub struct StakeNftOnProposal<'info> {
         mut,
         associated_token::mint = nft_mint,
         associated_token::authority = user,
-        associated_token::token_program = token_program,
     )]
     pub user_nft_account: Account<'info, TokenAccount>,
     #[account(
@@ -37,20 +36,27 @@ pub struct StakeNftOnProposal<'info> {
         payer = user,
         associated_token::mint = nft_mint,
         associated_token::authority = governance,
-        associated_token::token_program = token_program,
     )]
     pub proposal_nft_account: Account<'info, TokenAccount>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 pub fn stake_nft(ctx: Context<StakeNftOnProposal>, lock_period: u8) -> Result<()> {
     let proposal = &mut ctx.accounts.proposal;
     let stake_account = &mut ctx.accounts.stake;
+    let governance = &ctx.accounts.governance;
     let clock = Clock::get()?;
 
     require!(proposal.status == ProposalStatus::Active, ErrorCode::ProposalNotActive);
+
+    if let Some(nft_mint) = governance.nft_mint {
+        require!(ctx.accounts.nft_mint.key() == nft_mint, ErrorCode::InvalidMint);
+    } else {
+        return Err(ErrorCode::NftMintNotSet.into());
+    }
 
     // Transfer NFT from user to proposal account
     anchor_spl::token::transfer(
@@ -62,7 +68,7 @@ pub fn stake_nft(ctx: Context<StakeNftOnProposal>, lock_period: u8) -> Result<()
                 authority: ctx.accounts.user.to_account_info(),
             },
         ),
-        1, // NFTs have an amount of 1
+        1, // Transfer 1 NFT
     )?;
 
     stake_account.user = ctx.accounts.user.key();

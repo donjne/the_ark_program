@@ -42,5 +42,11 @@ pub enum ErrorCode {
     #[msg("Insufficient voting power. Please try staking more tokens for more voting power.")]
     ExceedsAvailableVotingPower,
     #[msg("Insufficient amount to unstake. Please try staking more tokens for more voting power.")]
-    InvalidNFTStake
+    InvalidNFTStake,
+    #[msg("Insufficient tokens")] 
+    InsufficientTokens,
+    #[msg("NFT Mint not set")] 
+    NftMintNotSet,
+    #[msg("SPL mint not set")] 
+    SplMintNotSet
 }

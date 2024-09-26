@@ -5,9 +5,19 @@ pub struct Vote {
     pub governance_pool: Pubkey,
     pub proposal: Pubkey,
     pub voter: Pubkey,
-    pub approve: bool,
+    pub decision: VoteDecision,
+    pub voting_power: u64,
     pub timestamp: i64,
+    pub bump: u8,
 }
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq)]
+pub enum VoteDecision {
+    Approve,
+    Reject,
+    Abstain,
+}
+
 
 impl Vote {
     pub const LEN: usize = 8 + // discriminator

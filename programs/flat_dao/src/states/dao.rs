@@ -19,19 +19,24 @@ pub struct DAO {
     pub name: String,
     pub polls: Vec<Poll>,
     pub users: Vec<User>,
+    pub total_members: u32, 
 }
 
 impl DAO {
+
     pub const LEN: usize = DISCRIMINATOR_LENGTH
-        + PUBLIC_KEY_LENGTH * 2 // creator, mint 
-        + 1 + 8
-        + 1 // threshold 51 => 100
-        + 8 * 3 // approved, rejected, min_poll_tokens 
-        + TIMESTAMP_LENGTH * 2 // time, created_at
-        + BUMP_LENGTH // bump
-        + VECTOR_LENGTH_PREFIX * 2
+        + PUBLIC_KEY_LENGTH * 2  // creator, mint 
+        + 1 + 8  // threshold, time
+        + 1  // threshold 51 => 100
+        + 8 * 3  // approved, rejected, min_poll_tokens 
+        + TIMESTAMP_LENGTH * 2  // time, created_at
+        + BUMP_LENGTH * 2  // dao_bump, vault_bump
+        + VECTOR_LENGTH_PREFIX * 2  // for polls and users vectors
         + STRING_LENGTH_PREFIX
-        + MAX_DAO_NAME_LENGTH;
+        + MAX_DAO_NAME_LENGTH
+        + 4;  // total_members (u32)
+
+    // ... other methods ...
 
     pub fn total_deposits(&self) -> usize {
         self.users.iter().map(|user| user.deposits.len()).sum()

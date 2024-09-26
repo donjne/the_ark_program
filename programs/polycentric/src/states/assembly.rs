@@ -11,6 +11,8 @@ pub struct Assembly {
     pub policy_areas: Vec<Pubkey>,
     pub total_proposals: u64,
     pub total_votes: u64,
+    pub bump: u8,
+
 }
 
 impl Assembly {
@@ -21,8 +23,9 @@ impl Assembly {
         4 + (32 * MAX_ASSEMBLY_MEMBERS) + // members
         4 + (32 * MAX_POLICY_AREAS_PER_ASSEMBLY) + // policy_areas
         8 + // total_proposals
-        8; // total_votes
-
+        8 + // total_votes
+        1;
+        
     pub fn add_member(&mut self, member: Pubkey) -> Result<()> {
         require!(self.members.len() < MAX_ASSEMBLY_MEMBERS, GovernanceError::MaxAssemblyMembersReached);
         self.members.push(member);

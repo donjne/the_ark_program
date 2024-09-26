@@ -17,8 +17,7 @@ impl Policy {
     pub const MAXIMUM_DESCRIPTION_LENGTH: usize = 300;
     pub const MAXIMUM_JURISDICTION_LENGTH: usize = 50;
 
-    pub fn space() -> usize {
-        8 +  // discriminator
+    pub const SPACE: usize = 8 +  // discriminator
         8 +  // id (u64)
         4 + Self::MAXIMUM_TITLE_LENGTH + // title (String)
         4 + Self::MAXIMUM_DESCRIPTION_LENGTH + // description (String)
@@ -26,6 +25,6 @@ impl Policy {
         8 +  // implemented_at (i64)
         8 +  // last_updated_at (i64)
         1 +  // is_active (bool)
-        32   // monarch (Pubkey)
-    }
+        32 +   // monarch (Pubkey)
+        1;
 }

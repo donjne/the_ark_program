@@ -32,11 +32,11 @@ pub struct StakeClaim<'info> {
         associated_token::mint = mint,
         associated_token::authority = user,
     )]
-    pub signer_ata: Box<Account<'info, TokenAccount>>,
+    pub signer_ata: Account<'info, TokenAccount>,
     #[account(
         address = dao.mint @ ErrorCode::WrongDAOMint
     )]
-    pub mint: Box<Account<'info, Mint>>,
+    pub mint: Account<'info, Mint>,
     #[account(
         mut,
         seeds = [b"vault", dao.creator.as_ref(), dao.mint.as_ref()],
@@ -44,7 +44,7 @@ pub struct StakeClaim<'info> {
         token::authority = auth,
         bump = dao.vault_bump
     )]
-    pub vault: Box<Account<'info, TokenAccount>>,
+    pub vault: Account<'info, TokenAccount>,
     #[account(
         mut,
         seeds = [b"analytics"],

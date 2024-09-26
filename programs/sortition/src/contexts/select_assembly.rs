@@ -10,7 +10,7 @@ pub struct SelectAssembly<'info> {
     #[account(
         init,
         payer = admin,
-        space = Assembly::space(),
+        space = Assembly::SPACE,
         seeds = [b"assembly", governance_pool.key().as_ref(), &governance_pool.total_citizens.to_le_bytes()],
         bump
     )]
@@ -18,7 +18,7 @@ pub struct SelectAssembly<'info> {
     #[account(
         init,
         payer = admin,
-        space = PaginationState::space(governance_pool.assembly_size as usize),
+        space = PaginationState::SPACE,
         seeds = [b"pagination", governance_pool.key().as_ref(), &governance_pool.total_citizens.to_le_bytes()],
         bump
     )]

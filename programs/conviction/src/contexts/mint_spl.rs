@@ -55,7 +55,6 @@ pub struct MintTokens<'info> {
         payer = payer,
         associated_token::mint = mint,
         associated_token::authority = governance,
-        associated_token::token_program = token_program,
     )]
     pub governance_ata: Account<'info, TokenAccount>,
 
@@ -64,7 +63,6 @@ pub struct MintTokens<'info> {
         payer = payer,
         associated_token::mint = mint,
         associated_token::authority = payer,
-        associated_token::token_program = token_program,
     )]
     pub citizen_ata: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,
@@ -86,9 +84,10 @@ pub fn initialize_token(
     ctx: Context<InitializeToken>,
     params: InitTokenParams
 ) -> Result<()> {
-    let governance = &ctx.accounts.governance;
+    let governance = &mut ctx.accounts.governance;
     let governance_key = governance.key();
     let payer = &ctx.accounts.payer.key();
+    governance.spl_symbol = params.symbol.clone();
 
 
 
@@ -182,6 +181,9 @@ pub fn mint_tokens(ctx: Context<MintTokens>, amount_to_treasury: u64, amount_to_
     // Using checked_add for safety
     governance.spl_minted = governance.spl_minted.checked_add(total_mint_amount as u32)
         .ok_or(ErrorCode::Overflow)?;
+
+        governance.total_sbt_token_supply += 1;
+
 
     // Emiting an event for off-chain tracking
     emit!(MintEvent {

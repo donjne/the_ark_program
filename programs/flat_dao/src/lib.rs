@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{Token, Mint};
+use anchor_spl::{token::{Token, Mint}, associated_token::AssociatedToken};
 use the_ark_program::cpi::accounts::{RegisterGovernment, AddTokenToTreasury, CreateTreasury};
 use the_ark_program::program::TheArkProgram;
 use the_ark_program::state::analytics::ArkAnalytics;
@@ -77,6 +77,10 @@ pub mod flat_dao {
         ctx.accounts.update_analytics()
     }
 
+    pub fn add_new_member(ctx: Context<AddMember>) -> Result<()> {
+        add_member(ctx)
+    }
+
     pub fn poll_execute(ctx: Context<PollExecute>, poll: u64) -> Result<()> {
         ctx.accounts.poll_execute(poll)
     }
@@ -85,7 +89,10 @@ pub mod flat_dao {
         let cpi_accounts = CreateTreasury {
             treasury: ctx.accounts.treasury.to_account_info(),
             owner: ctx.accounts.dao.to_account_info(),
+            token_program: ctx.accounts.token_program.to_account_info(),
+            associated_token_program: ctx.accounts.associated_token_program.to_account_info(),
             system_program: ctx.accounts.system_program.to_account_info(),
+            rent: ctx.accounts.rent.to_account_info(),
         };
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
         
@@ -103,6 +110,7 @@ pub mod flat_dao {
             mint: ctx.accounts.mint.to_account_info(),
             owner: ctx.accounts.dao.to_account_info(),
             token_program: ctx.accounts.token_program.to_account_info(),
+            associated_token_program: ctx.accounts.associated_token_program.to_account_info(),
             system_program: ctx.accounts.system_program.to_account_info(),
             rent: ctx.accounts.rent.to_account_info(),
         };
@@ -136,6 +144,9 @@ pub struct CreateTreasuryCpi<'info> {
     pub admin: Signer<'info>,
     pub treasury_program: Program<'info, TheArkProgram>,
     pub system_program: Program<'info, System>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub token_program: Program<'info, Token>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 #[derive(Accounts)]
@@ -150,8 +161,9 @@ pub struct AddTokenToTreasuryCpi<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
     pub treasury_program: Program<'info, TheArkProgram>,
-    pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub token_program: Program<'info, Token>,
     pub rent: Sysvar<'info, Rent>,
 }
 

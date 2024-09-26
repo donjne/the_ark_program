@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use crate::states::{Monarch, Subject};
+use crate::states::{Monarch, Subject, Kingdom};
 use crate::error::AbsoluteMonarchyError;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
@@ -18,11 +18,18 @@ pub enum Punishment {
 
 #[derive(Accounts)]
 pub struct RoyalJudgment<'info> {
-    #[account(mut, has_one = authority @ AbsoluteMonarchyError::NotMonarch)]
-    pub monarch: Account<'info, Monarch>,
+    #[account(mut)]
+    pub kingdom: Box<Account<'info, Kingdom>>,
+
+    #[account(
+        mut,
+        has_one = authority @ AbsoluteMonarchyError::NotMonarch,
+        constraint = monarch.key() == kingdom.monarch @ AbsoluteMonarchyError::MonarchKingdomMismatch
+    )]
+    pub monarch: Box<Account<'info, Monarch>>,
 
     #[account(mut)]
-    pub subject: Account<'info, Subject>,
+    pub subject: Box<Account<'info, Subject>>,
 
     #[account(mut)]
     pub authority: Signer<'info>,
@@ -72,8 +79,15 @@ pub fn royal_judgment(ctx: Context<RoyalJudgment>, verdict: Verdict, punishment:
 
 #[derive(Accounts)]
 pub struct RoyalPardon<'info> {
-    #[account(mut, has_one = authority @ AbsoluteMonarchyError::NotMonarch)]
-    pub monarch: Account<'info, Monarch>,
+    #[account(mut)]
+    pub kingdom: Box<Account<'info, Kingdom>>,
+
+    #[account(
+        mut,
+        has_one = authority @ AbsoluteMonarchyError::NotMonarch,
+        constraint = monarch.key() == kingdom.monarch @ AbsoluteMonarchyError::MonarchKingdomMismatch
+    )]
+    pub monarch: Box<Account<'info, Monarch>>,
 
     #[account(mut)]
     pub subject: Account<'info, Subject>,

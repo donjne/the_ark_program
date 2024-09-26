@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{Token, Mint};
+use anchor_spl::{token::{Token, Mint}, associated_token::AssociatedToken};
 use the_ark_program::cpi::accounts::{RegisterGovernment, AddTokenToTreasury, CreateTreasury};
 use the_ark_program::program::TheArkProgram;
 use the_ark_program::state::analytics::ArkAnalytics;
@@ -40,8 +40,8 @@ pub mod sortition {
         Ok(())
     }
 
-    pub fn initialize_sortition_governance(ctx: Context<InitializeGovernance>, assembly_size: u8, region_quotas: [u32; 10], age_group_quotas: [u32; 5], other_demographic_quotas: [u32; 3]) -> Result<()> {
-        initialize_governance(ctx, assembly_size, region_quotas, age_group_quotas, other_demographic_quotas)
+    pub fn initialize_sortition_governance(ctx: Context<InitializeGovernance>, args: InitializeGovernmentArgs) -> Result<()> {
+        initialize_governance(ctx, args)
     }
 
     pub fn register_sortition_citizen(ctx: Context<RegisterCitizen>, name: String, region: u8, age_group: u8, other_demographic: u8) -> Result<()> {
@@ -56,12 +56,41 @@ pub mod sortition {
         finalize_assembly_selection(ctx)
     }
 
-    pub fn create_sortition_proposal(ctx: Context<CreateProposal>, description: String) -> Result<()> {
-        create_proposal(ctx, description)
+    pub fn create_new_proposal(ctx: Context<CreateProposal>, name: String, description: String, end_time: i64) -> Result<()> {
+        create_proposal(ctx, name, description, end_time)
     }
 
     pub fn vote_on_sortition_proposal(ctx: Context<VoteOnProposal>, approve: bool) -> Result<()> {
         vote_on_proposal(ctx, approve)
+    }
+
+    pub fn mint_new_sbt(ctx: Context<MintSbt>, args: InitializeSbtArgs) -> Result<()> {
+        mint_sbt(ctx, args)
+    }
+
+    pub fn mint_new_nft(ctx: Context<MintNft>, args: MintNftArgs) -> Result<()> {
+        mint_nft(ctx, args)
+    }
+
+    pub fn initialize_spl_token(
+        ctx: Context<InitializeToken>,
+        params: InitTokenParams
+    ) -> Result<()> {
+        mint_spl::initialize_token(ctx, params)
+    }
+
+    pub fn mint_spl_tokens(ctx: Context<MintTokens>, amount_to_treasury: u64, amount_to_subject: u64) -> Result<()> {
+        mint_spl::mint_tokens(ctx, amount_to_treasury, amount_to_subject)
+    }
+
+    pub fn add_new_governance_member(
+        ctx: Context<AddGovernanceMember>, 
+        name: String, 
+        region: u8, 
+        age_group: u8, 
+        other_demographic: u8
+    ) -> Result<()> {
+        add_governance_member(ctx, name, region, age_group, other_demographic)
     }
 
     pub fn create_treasury(ctx: Context<CreateTreasuryCpi>, name: String) -> Result<()> {
@@ -69,7 +98,10 @@ pub mod sortition {
         let cpi_accounts = CreateTreasury {
             treasury: ctx.accounts.treasury.to_account_info(),
             owner: ctx.accounts.governance_pool.to_account_info(),
+            token_program: ctx.accounts.token_program.to_account_info(),
+            associated_token_program: ctx.accounts.associated_token_program.to_account_info(),
             system_program: ctx.accounts.system_program.to_account_info(),
+            rent: ctx.accounts.rent.to_account_info(),
         };
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
         
@@ -87,6 +119,7 @@ pub mod sortition {
             mint: ctx.accounts.mint.to_account_info(),
             owner: ctx.accounts.governance_pool.to_account_info(),
             token_program: ctx.accounts.token_program.to_account_info(),
+            associated_token_program: ctx.accounts.associated_token_program.to_account_info(),
             system_program: ctx.accounts.system_program.to_account_info(),
             rent: ctx.accounts.rent.to_account_info(),
         };
@@ -118,7 +151,10 @@ pub struct CreateTreasuryCpi<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
     pub treasury_program: Program<'info, TheArkProgram>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 #[derive(Accounts)]
@@ -133,6 +169,7 @@ pub struct AddTokenToTreasuryCpi<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
     pub treasury_program: Program<'info, TheArkProgram>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,

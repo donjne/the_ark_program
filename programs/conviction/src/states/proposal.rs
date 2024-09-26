@@ -22,6 +22,7 @@ pub struct Proposal {
     pub init_token_params: Option<InitTokenParams>,
     pub nft_args: Option<MintNftArgs>,
     pub sbt_args: Option<InitializeSbtArgs>,
+    pub total_staked: u64,
     pub bump: u8,
 }
 
@@ -85,6 +86,7 @@ impl Proposal {
             1 + // transferrable (bool)
             4 + Self::MAX_URI_LEN
         ) +  // sbt_args (optional)
+        8 + // total_staked
         1;  // bump
 
     // ... other impl methods ...

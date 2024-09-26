@@ -16,6 +16,7 @@ pub struct CreateProposal<'info> {
     #[account(mut)]
     pub creator: Signer<'info>,
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 pub fn create_proposal(

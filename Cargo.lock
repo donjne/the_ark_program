@@ -11,6 +11,7 @@ dependencies = [
  "mpl-token-metadata",
  "spl-token-metadata-interface",
  "spl-type-length-value",
+ "standard",
  "the_ark_program",
 ]
 
@@ -772,6 +773,7 @@ dependencies = [
  "mpl-token-metadata",
  "spl-token-metadata-interface",
  "spl-type-length-value",
+ "standard",
  "the_ark_program",
 ]
 
@@ -1747,6 +1749,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "reclaim"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "hex",
+]
+
+[[package]]
 name = "redox_syscall"
 version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2453,7 +2463,12 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
+ "mpl-token-metadata",
  "pyth-sdk-solana",
+ "reclaim",
+ "spl-token-metadata-interface",
+ "spl-type-length-value",
+ "the_ark_program",
 ]
 
 [[package]]

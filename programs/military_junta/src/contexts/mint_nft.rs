@@ -37,7 +37,7 @@ pub struct MintNft<'info> {
         mint::authority = signer,
         extensions::metadata_pointer::authority = junta,
         extensions::metadata_pointer::metadata_address = mint,
-        seeds = [Junta::NFT_PREFIX_SEED, junta.key().as_ref(), junta.symbol.as_bytes()], 
+        seeds = [Junta::NFT_PREFIX_SEED, junta.key().as_ref(), args.symbol.as_bytes()], 
         bump
     )]
     pub mint: InterfaceAccount<'info, Mint>,
@@ -63,11 +63,12 @@ pub struct MintNft<'info> {
 pub fn mint_nft(ctx: Context<MintNft>, args: MintNftArgs) -> Result<()> {
     let junta = &mut ctx.accounts.junta;
     let junta_key = junta.key();
+    junta.symbol = args.symbol.clone();
 
     let seeds = &[
         Junta::NFT_PREFIX_SEED,
         junta_key.as_ref(),
-        junta.symbol.as_bytes(),
+        args.symbol.as_bytes(),
         &[ctx.bumps.mint]
     ];
 
@@ -77,7 +78,7 @@ pub fn mint_nft(ctx: Context<MintNft>, args: MintNftArgs) -> Result<()> {
         return Err(ErrorCode::Unauthorized.into());
     }
 
-    if junta.minteds >= junta.supply {
+    if junta.nft_minted >= junta.total_nft_token_supply {
         return Err(ErrorCode::SupplyReached.into());
     }
 
@@ -166,7 +167,7 @@ pub fn mint_nft(ctx: Context<MintNft>, args: MintNftArgs) -> Result<()> {
         None,
     )?;
 
-    junta.minteds += 1;
+    junta.nft_minted += 1;
 
     emit!(NftMinted {
         junta: junta.key(),

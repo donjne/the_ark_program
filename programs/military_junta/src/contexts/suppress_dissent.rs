@@ -11,6 +11,7 @@ pub struct SuppressDissent<'info> {
     pub citizen: Account<'info, Citizen>,
     #[account(mut)]
     pub suppressor: Signer<'info>,
+    pub system_program: Program<'info, System>,
 }
 
 pub fn suppress_dissent(ctx: Context<SuppressDissent>, target: Pubkey) -> Result<()> {

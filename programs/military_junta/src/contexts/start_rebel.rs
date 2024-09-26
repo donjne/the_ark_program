@@ -6,7 +6,7 @@ use crate::states::{junta::Junta, citizen::Citizen, rebel::Rebel};
 #[instruction(rebellion_scale: u64)]
 pub struct StartRebellion<'info> {
     #[account(mut)]
-    pub junta: Account<'info, Junta>,
+    pub junta: Box<Account<'info, Junta>>,
 
     #[account(mut)]
     pub rebel_leader: Signer<'info>,  
@@ -14,14 +14,20 @@ pub struct StartRebellion<'info> {
     #[account(
         init_if_needed,
         payer = rebel_leader,
-        space = 8 + Rebel::SIZE, // 8 for the discriminator
-        seeds = [b"rebel", junta.key().as_ref()],
+        space = Rebel::SIZE, 
+        seeds = [b"rebel", junta.key().as_ref(), &junta.total_subjects.to_le_bytes()],
         bump
     )]
-    pub rebels: Account<'info, Rebel>,  
+    pub rebels: Box<Account<'info, Rebel>>,  
 
-    #[account(mut)]
-    pub citizen: Account<'info, Citizen>, 
+    #[account(
+        init, 
+        payer = rebel_leader, 
+        space = Citizen::LEN, 
+        seeds = [b"citizen", junta.key().as_ref(), &junta.total_subjects.to_le_bytes()],
+        bump
+    )]
+    pub citizen: Box<Account<'info, Citizen>>, 
 
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
@@ -47,6 +53,8 @@ pub fn start_rebellion(ctx: Context<StartRebellion>) -> Result<()> {
             is_dissident: citizen.is_dissident,
             is_imprisoned: citizen.is_imprisoned,
             imprisonment_end: citizen.imprisonment_end,
+            joined_at: citizen.joined_at,
+            bump: ctx.bumps.citizen,
         };
 
         rebels.add_rebel(citizen_data)?;

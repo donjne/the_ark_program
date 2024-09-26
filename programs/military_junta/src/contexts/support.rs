@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Token, TokenAccount, Transfer};
+use anchor_spl::token::{self, Token, TokenAccount, Transfer, Mint};
+use anchor_spl::associated_token::AssociatedToken;
 
 use crate::states::{junta::Junta, citizen::Citizen, supporters::*};
 
@@ -14,31 +15,42 @@ pub struct GainSupport<'info> {
 
     #[account(
         init_if_needed,
-        payer = signer,
-        space = 8 + Supporters::SIZE, // 8 for the discriminator
-        seeds = [b"supporters", junta.key().as_ref()],
+        payer = payer,
+        space = 8 + Supporters::SIZE,
+        seeds = [b"supporter", junta.key().as_ref(), &junta.total_subjects.to_le_bytes()],
         bump
     )]
     pub supporters: Box<Account<'info, Supporters>>,
 
-    #[account(mut)]
-    pub signer: Signer<'info>,
-
-    #[account(mut)]
+    #[account(
+        mut, 
+        seeds = [b"citizen", junta.key().as_ref(), &junta.total_subjects.to_le_bytes()],
+        bump = citizen.bump
+    )]
     pub citizen: Box<Account<'info, Citizen>>,
 
+    #[account(mut)]
+    pub payer: Signer<'info>,
+
+    #[account(mut)]
+    pub mint: Account<'info, Mint>, 
+
     #[account(
-        mut,
-        constraint = citizen_token_account.owner == citizen.key(),
+        init_if_needed,
+        payer = payer,
+        associated_token::mint = mint,
+        associated_token::authority = citizen,
     )]
-    pub citizen_token_account: Box<Account<'info, TokenAccount>>,
+    pub citizen_token_account: Account<'info, TokenAccount>,
 
     #[account(
         mut,
         constraint = junta_token_account.owner == junta.key(),
     )]
-    pub junta_token_account: Box<Account<'info, TokenAccount>>,
+    pub junta_token_account: Account<'info, TokenAccount>,
+
     pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
 }
@@ -53,21 +65,31 @@ pub fn gain_support(ctx: Context<GainSupport>, amount: u64) -> Result<()> {
         supporters.support_amounts = [(Pubkey::default(), 0); MAX_SUPPORT_AMOUNTS];
     }
 
+    let junta_key = junta.key();
+    let junta_subjects = junta.total_subjects.to_le_bytes();
+    let seeds = &[
+        b"citizen",
+        junta_key.as_ref(),
+        junta_subjects.as_ref(),
+        &[junta.bump],
+    ];
+    let signer_seeds = &[&seeds[..]];
+
     // Transfer tokens from citizen to junta
     let cpi_accounts = Transfer {
         from: ctx.accounts.citizen_token_account.to_account_info(),
         to: ctx.accounts.junta_token_account.to_account_info(),
-        authority: ctx.accounts.signer.to_account_info(),
+        authority: ctx.accounts.citizen.to_account_info(),
     };
     let cpi_program = ctx.accounts.token_program.to_account_info();
-    let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+    let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds);
     token::transfer(cpi_ctx, amount)?;
 
     // Check if the citizen has transferred enough to be considered a supporter
     let citizen_key = ctx.accounts.citizen.key();
     let citizen_total_support = supporters.get_support_amount(&citizen_key) + amount;
     
-    if citizen_total_support >= junta.support_threshold && !supporters.is_supporter(&citizen_key) {
+    if citizen_total_support >= junta.support_threshold.into() && !supporters.is_supporter(&citizen_key) {
         supporters.add_supporter(citizen_key)?;
         
         // Calculate how many levels to increase

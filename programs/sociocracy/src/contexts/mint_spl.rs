@@ -1,6 +1,6 @@
-use crate::errors::ErrorCode;
+use crate::errors::GovernanceError;
 use anchor_lang::prelude::*;
-use crate::states::governance::Governance;
+use crate::states::circle::Circle;
 use anchor_spl::{
     associated_token::AssociatedToken,
     token::{mint_to, Mint, MintTo, Token, TokenAccount, initialize_mint, InitializeMint},
@@ -16,7 +16,7 @@ use anchor_spl::{
 #[instruction(params: InitTokenParams)]
 pub struct InitializeToken<'info> {
     #[account(mut)]
-    pub governance: Box<Account<'info, Governance>>,
+    pub circle: Box<Account<'info, Circle>>,
     
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -26,7 +26,7 @@ pub struct InitializeToken<'info> {
         payer = payer,
         mint::decimals = params.decimals,
         mint::authority = mint,
-        seeds = [Governance::SPL_PREFIX_SEED, governance.key().as_ref(), params.symbol.as_bytes()], 
+        seeds = [Circle::SPL_PREFIX_SEED, circle.key().as_ref(), params.symbol.as_bytes()], 
         bump
     )]
     pub mint: Account<'info, Mint>,
@@ -46,7 +46,7 @@ pub struct MintTokens<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     #[account(mut)]
-    pub governance: Box<Account<'info, Governance>>,
+    pub circle: Box<Account<'info, Circle>>,
     #[account(mut)]
     pub mint: Account<'info, Mint>,
 
@@ -54,10 +54,10 @@ pub struct MintTokens<'info> {
         init_if_needed,
         payer = payer,
         associated_token::mint = mint,
-        associated_token::authority = governance,
+        associated_token::authority = circle,
         associated_token::token_program = token_program,
     )]
-    pub governance_ata: Account<'info, TokenAccount>,
+    pub circle_ata: Account<'info, TokenAccount>,
 
     #[account(
         init_if_needed,
@@ -73,7 +73,6 @@ pub struct MintTokens<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone)]
 pub struct InitTokenParams {
     pub name: String,
@@ -86,15 +85,13 @@ pub fn initialize_token(
     ctx: Context<InitializeToken>,
     params: InitTokenParams
 ) -> Result<()> {
-    let governance = &ctx.accounts.governance;
-    let governance_key = governance.key();
+    let circle = &ctx.accounts.circle;
+    let circle_key = circle.key();
     let payer = &ctx.accounts.payer.key();
 
-
-
     let metadata_seeds = &[
-        Governance::SPL_PREFIX_SEED,
-        governance_key.as_ref(),
+        Circle::SPL_PREFIX_SEED,
+        circle_key.as_ref(),
         params.symbol.as_bytes(),
         &[ctx.bumps.mint]
     ];
@@ -108,16 +105,16 @@ pub fn initialize_token(
             rent: ctx.accounts.rent.to_account_info(),
         },
     );
-    initialize_mint(cpi_context, params.decimals, &payer.key(), Some(&governance.key()))?;
+    initialize_mint(cpi_context, params.decimals, &payer.key(), Some(&circle.key()))?;
 
     let token_data = DataV2 {
         name: params.name.clone(),
         symbol: params.symbol.clone(),
         uri: params.uri,
         seller_fee_basis_points: 500,
-        creators: None, // creators list
-        collection: None, // collection info
-        uses: None, // use cases 
+        creators: None,
+        collection: None,
+        uses: None,
     };
 
     let metadata_ctx = CpiContext::new_with_signer(
@@ -148,21 +145,20 @@ pub fn initialize_token(
 }
 
 pub fn mint_tokens(ctx: Context<MintTokens>, amount_to_treasury: u64, amount_to_citizen: u64) -> Result<()> {
-    let governance = &mut ctx.accounts.governance;
-
+    let circle = &mut ctx.accounts.circle;
 
     // Checking for overflow
     let total_mint_amount = amount_to_treasury.checked_add(amount_to_citizen)
-        .ok_or(ErrorCode::Overflow)?;
+        .ok_or(GovernanceError::Overflow)?;
 
     // Checking if the new total minted would exceed supply
-    if governance.spl_minted as u64 + total_mint_amount > governance.total_spl_token_supply as u64 {
-        return Err(ErrorCode::ExceedsSupply.into());
+    if circle.spl_minted as u64 + total_mint_amount > circle.total_spl_token_supply as u64 {
+        return Err(GovernanceError::ExceedsSupply.into());
     }
 
     let cpi_accounts = MintTo {
         mint: ctx.accounts.mint.to_account_info(),
-        to: ctx.accounts.governance_ata.to_account_info(),
+        to: ctx.accounts.circle_ata.to_account_info(),
         authority: ctx.accounts.payer.to_account_info(),
     };
     let cpi_program = ctx.accounts.token_program.to_account_info();
@@ -180,15 +176,15 @@ pub fn mint_tokens(ctx: Context<MintTokens>, amount_to_treasury: u64, amount_to_
     mint_to(cpi_ctx, amount_to_citizen)?;
 
     // Using checked_add for safety
-    governance.spl_minted = governance.spl_minted.checked_add(total_mint_amount as u32)
-        .ok_or(ErrorCode::Overflow)?;
+    circle.spl_minted = circle.spl_minted.checked_add(total_mint_amount as u32)
+        .ok_or(GovernanceError::Overflow)?;
 
-    // Emiting an event for off-chain tracking
+    // Emitting an event for off-chain tracking
     emit!(MintEvent {
-        governance: governance.key(),
+        circle: circle.key(),
         treasury_amount: amount_to_treasury,
         citizen_amount: amount_to_citizen,
-        total_minted: governance.spl_minted,
+        total_minted: circle.spl_minted,
     });
 
     Ok(())
@@ -196,9 +192,8 @@ pub fn mint_tokens(ctx: Context<MintTokens>, amount_to_treasury: u64, amount_to_
 
 #[event]
 pub struct MintEvent {
-    pub governance: Pubkey,
+    pub circle: Pubkey,
     pub treasury_amount: u64,
     pub citizen_amount: u64,
     pub total_minted: u32,
 }
-

@@ -6,7 +6,11 @@ use crate::constants::*;
 #[derive(Accounts)]
 #[instruction(title: String, description: String)]
 pub struct CreateProposal<'info> {
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [b"governance_pool", admin.key().as_ref()],
+        bump =  governance_pool.bump,
+    )]
     pub governance_pool: Account<'info, GovernancePool>,
     
     #[account(mut)]
@@ -14,7 +18,7 @@ pub struct CreateProposal<'info> {
     
     #[account(
         init,
-        payer = creator,
+        payer = admin,
         space = Proposal::LEN,
         seeds = [b"proposal", policy_area.key().as_ref(), &policy_area.proposals.len().to_le_bytes()],
         bump
@@ -22,9 +26,12 @@ pub struct CreateProposal<'info> {
     pub proposal: Account<'info, Proposal>,
     
     #[account(mut)]
-    pub creator: Signer<'info>,
+    pub admin: Signer<'info>,
     
     #[account(
+        mut,
+        seeds = [b"assembly", governance_pool.key().as_ref(), &governance_pool.assemblies.len().to_le_bytes()],
+        bump = assembly.bump,
         constraint = assembly.governance_pool == governance_pool.key() 
         && assembly.policy_areas.contains(&policy_area.key())
     )]
@@ -32,6 +39,7 @@ pub struct CreateProposal<'info> {
     
     pub system_program: Program<'info, System>,
     pub clock: Sysvar<'info, Clock>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 pub fn handler(ctx: Context<CreateProposal>, title: String, description: String) -> Result<()> {
@@ -41,7 +49,7 @@ pub fn handler(ctx: Context<CreateProposal>, title: String, description: String)
     let governance_pool = &mut ctx.accounts.governance_pool;
     let policy_area = &mut ctx.accounts.policy_area;
     let proposal = &mut ctx.accounts.proposal;
-    let creator = &ctx.accounts.creator;
+    let creator = &ctx.accounts.admin;
     let assembly = &mut ctx.accounts.assembly;
     let clock = &ctx.accounts.clock;
 
@@ -72,6 +80,7 @@ pub fn handler(ctx: Context<CreateProposal>, title: String, description: String)
         proposal.no_votes = 0;
         proposal.start_time = start_time;
         proposal.end_time = end_time;
+        proposal.bump = ctx.bumps.proposal;
 
 
     policy_area.add_proposal(proposal.key())?;

@@ -12,6 +12,7 @@ pub struct FinalizeAssemblySelection<'info> {
     #[account(mut)]
     pub pagination_state: Account<'info, PaginationState>,
     #[account(
+        mut,
         seeds = [
             b"citizen_index",
             governance_pool.key().as_ref(),
@@ -24,6 +25,7 @@ pub struct FinalizeAssemblySelection<'info> {
     pub admin: Signer<'info>,
     /// CHECK: This is safe as we only read from this account
     #[account(
+        mut,
         seeds = [b"recent-blockhashes"],
         bump,
         seeds::program = ID

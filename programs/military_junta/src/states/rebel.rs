@@ -12,7 +12,7 @@ pub struct Rebel {
 impl Rebel {
     pub const MAX_REBELS: usize = 10;
     
-    pub const SIZE: usize = 
+    pub const SIZE: usize = 8 +
         (Self::MAX_REBELS * std::mem::size_of::<Option<Citizen>>()) + // Size of rebels array
         1; // Size of count (u8)
 

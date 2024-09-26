@@ -11,12 +11,15 @@ pub struct IssueDecree<'info> {
     #[account(
         init,
         payer = issuer,
-        space = 8 + 32 + Decree::MAX_CONTENT_LENGTH + 8
+        space = 8 + 32 + Decree::MAX_CONTENT_LENGTH + 8 + 1,
+        seeds = [b"decree", junta.key().as_ref(), &junta.total_subjects.to_le_bytes()],
+        bump
     )]
     pub decree: Account<'info, Decree>,
     #[account(mut)]
     pub issuer: Signer<'info>,
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 pub fn issue_decree(ctx: Context<IssueDecree>, content: String) -> Result<()> {
@@ -33,6 +36,7 @@ pub fn issue_decree(ctx: Context<IssueDecree>, content: String) -> Result<()> {
     decree.issuer = ctx.accounts.issuer.key();
     decree.content = content;
     decree.issued_at = Clock::get()?.unix_timestamp;
+    decree.bump = ctx.bumps.decree;
 
     junta.decrees.push(decree.key());
 

@@ -33,5 +33,33 @@ pub enum GovernanceError {
     #[msg("Citizen index is full")]
     CitizenIndexFull,
     #[msg("Invalid data")]
-    InvalidInput
+    InvalidInput,
+    #[msg("Voting has not yet started")]
+    VotingNotStarted,
+    #[msg("Voting has not ended")]
+    VotingEnded,
+    #[msg("Invalid proposal")]
+    InvalidProposal,
+    #[msg("Overflow error")]
+    Overflow,
+    #[msg("Supply has been exceeded")] 
+    ExceedsSupply,
+    #[msg("Account is missing")]
+    MissingAccount,
+    #[msg("Account required is missing")]
+    MissingRequiredAccount,
+    #[msg("Mint is not valid")]
+    InvalidMint,
+    #[msg("Miissing NFT config")]
+    MissingNFTConfig,
+    #[msg("Missing spl config")]
+    MissingSPLConfig,
+    #[msg("No Junta token specified")]
+    NoTokenSpecified,
+    #[msg("Insufficient tokens to join junta")]
+    InsufficientTokens,
+    #[msg("Already a member of this junta")]
+    AlreadyMember,
+    #[msg("Arithmetic Error")]
+    ArithmeticError
 }

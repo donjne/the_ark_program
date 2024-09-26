@@ -45,5 +45,23 @@ pub enum ErrorCode {
     #[msg("Invalid Junta Vault ")]
     InvalidJuntaVault,
     #[msg("The maximum size of support has been met")]
-    SupportAmountsArrayFull
+    SupportAmountsArrayFull,
+    #[msg("Account is missing")]
+    MissingAccount,
+    #[msg("Account required is missing")]
+    MissingRequiredAccount,
+    #[msg("Mint is not valid")]
+    InvalidMint,
+    #[msg("Miissing NFT config")]
+    MissingNFTConfig,
+    #[msg("Missing spl config")]
+    MissingSPLConfig,
+    #[msg("No Junta token specified")]
+    NoJuntaTokenSpecified,
+    #[msg("Insufficient tokens to join junta")]
+    InsufficientTokens,
+    #[msg("Already a member of this junta")]
+    AlreadyMember,
+    #[msg("Arithmetic Error")]
+    ArithmeticError
 }

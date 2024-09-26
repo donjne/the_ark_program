@@ -10,6 +10,8 @@ pub struct PolicyArea {
     pub assemblies: Vec<Pubkey>,
     pub proposals: Vec<Pubkey>,
     pub total_votes: u64,
+    pub bump: u8,
+
 }
 
 impl PolicyArea {

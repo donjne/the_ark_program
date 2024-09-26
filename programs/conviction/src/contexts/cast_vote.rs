@@ -3,9 +3,6 @@ use anchor_spl::token::Token;
 use crate::states::{governance::Governance, proposal::Proposal, vote::{StakeAccount, Vote}};
 use crate::states::helpers::*;
 use crate::errors::ErrorCode;
-
-
-
 #[derive(Accounts)]
 pub struct CastVote<'info> {
     #[account(mut)]
@@ -26,6 +23,7 @@ pub struct CastVote<'info> {
     pub stake_account: Account<'info, StakeAccount>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 pub fn vote_with_power(ctx: Context<CastVote>, vote: bool, voting_power: u64) -> Result<()> {

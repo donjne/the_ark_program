@@ -9,8 +9,7 @@ pub struct CreateAssembly<'info> {
     #[account(
         mut,
         seeds = [b"governance_pool", admin.key().as_ref()],
-        bump,
-        has_one = admin
+        bump =  governance_pool.bump,
     )]
     pub governance_pool: Account<'info, GovernancePool>,
     
@@ -27,6 +26,8 @@ pub struct CreateAssembly<'info> {
     pub admin: Signer<'info>,
     
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
+
 }
 
 pub fn handler(ctx: Context<CreateAssembly>, name: String, description: String) -> Result<()> {
@@ -45,6 +46,7 @@ pub fn handler(ctx: Context<CreateAssembly>, name: String, description: String) 
     assembly.policy_areas = Vec::new();
     assembly.total_proposals = 0;
     assembly.total_votes = 0;
+    assembly.bump = ctx.bumps.assembly;
 
     Ok(())
 }

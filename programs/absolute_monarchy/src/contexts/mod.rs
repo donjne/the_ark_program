@@ -9,6 +9,11 @@ pub mod military;
 pub mod policy;
 pub mod privileged;
 pub mod status;
+pub mod mint_spl;
+pub mod mint_nft;
+pub mod mint_sbt;
+pub mod make_decision;
+pub mod init_treasury;
 
 pub use abdicate::*;
 pub use appoint::*;
@@ -21,3 +26,9 @@ pub use military::*;
 pub use policy::*;
 pub use privileged::*;
 pub use status::*;
+pub use mint_spl::*;
+pub use mint_nft::*;
+pub use mint_sbt::*;
+pub use make_decision::*;
+pub use init_treasury::*;
+

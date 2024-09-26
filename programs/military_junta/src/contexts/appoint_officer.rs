@@ -10,12 +10,16 @@ pub struct AppointOfficer<'info> {
     #[account(
         init,
         payer = leader,
-        space = 8 + 32 + 1 + 8
+        space = Officer::SPACE,
+        seeds = [b"officer", junta.key().as_ref(), &junta.total_subjects.to_le_bytes()],
+        bump
     )]
     pub officer: Account<'info, Officer>,
     #[account(mut)]
     pub leader: Signer<'info>,
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
+
 }
 
 pub fn appoint_officer(ctx: Context<AppointOfficer>, rank: u8) -> Result<()> {

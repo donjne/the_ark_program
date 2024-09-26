@@ -15,6 +15,7 @@ pub mod transfer_leadership;
 pub mod mint_nft;
 pub mod mint_sbt;
 pub mod mint_spl;
+pub mod add;
 
 pub use initialize_junta::*;
 pub use appoint_officer::*;
@@ -33,3 +34,4 @@ pub use transfer_leadership::*;
 pub use  mint_nft::*;
 pub use mint_sbt::*;
 pub use mint_spl::*;
+pub use add::*;

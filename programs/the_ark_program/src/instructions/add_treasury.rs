@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Token, TokenAccount, Mint};
 use crate::state::Treasury;
+use anchor_spl::associated_token::AssociatedToken;
 
 #[derive(Accounts)]
 #[instruction(name: String, authority: Pubkey)]
@@ -17,7 +18,12 @@ pub struct CreateTreasury<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
 
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
+
+
 }
 
 #[derive(Accounts)]
@@ -28,16 +34,17 @@ pub struct AddTokenToTreasury<'info> {
     #[account(
         init,
         payer = owner,
-        token::mint = mint,
-        token::authority = treasury,
+        associated_token::mint = mint,
+        associated_token::authority = treasury,
     )]
     pub token_account: Account<'info, TokenAccount>,
 
+    #[account(mut)]
     pub mint: Account<'info, Mint>,
 
     #[account(mut)]
     pub owner: Signer<'info>,
-
+    pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,

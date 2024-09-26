@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{Token, Mint};
+use anchor_spl::{token::{Token, Mint}, associated_token::AssociatedToken};
 use the_ark_program::cpi::accounts::{RegisterGovernment, AddTokenToTreasury, CreateTreasury};
 use the_ark_program::program::TheArkProgram;
 use the_ark_program::state::analytics::ArkAnalytics;
@@ -39,8 +39,8 @@ pub mod polycentric {
         Ok(())
     }
 
-    pub fn initialize_government(ctx: Context<InitializeGovernment>, name: String, description: String) -> Result<()> {
-        initialize_gov::handler(ctx, name, description)
+    pub fn initialize_government(ctx: Context<InitializeGovernment>, args: InitializeGovernmentArgs) -> Result<()> {
+        initialize_gov::handler(ctx, args)
     }
 
     pub fn create_assembly(ctx: Context<CreateAssembly>, name: String, description: String) -> Result<()> {
@@ -55,12 +55,47 @@ pub mod polycentric {
         create_proposal::handler(ctx, title, description)
     }
 
-    pub fn cast_vote(ctx: Context<CastVote>, approve: bool) -> Result<()> {
-        cast_vote::handler(ctx, approve)
+    pub fn cast_vote(ctx: Context<CastVote>, decision: VoteDecision, voting_power_to_use: u64) -> Result<()> {
+        cast_vote::handler(ctx, decision, voting_power_to_use)
     }
 
     pub fn execute_proposal(ctx: Context<ExecuteProposal>) -> Result<()> {
         execute_proposal::handler(ctx)
+    }
+
+    pub fn mint_new_sbt(ctx: Context<MintSbt>, args: InitializeSbtArgs) -> Result<()> {
+        mint_sbt::mint_sbt(ctx, args)
+    }
+
+    pub fn mint_new_nft(ctx: Context<MintNft>, args: MintNftArgs) -> Result<()> {
+        mint_nft::mint_nft(ctx, args)
+    }
+
+    pub fn initialize_spl_token(
+        ctx: Context<InitializeToken>,
+        params: InitTokenParams
+    ) -> Result<()> {
+        mint_spl::initialize_token(ctx, params)
+    }
+
+    pub fn mint_spl_tokens(ctx: Context<MintTokens>, amount_to_treasury: u64, amount_to_subject: u64) -> Result<()> {
+        mint_spl::mint_tokens(ctx, amount_to_treasury, amount_to_subject)
+    }
+
+    pub fn create_task(ctx: Context<CreateTask>, task_id: u64, description: String, reward: u64) -> Result<()> {
+        new_task::create_task(ctx, task_id, description, reward)
+    }
+
+    pub fn initialize_citizen(ctx: Context<InitializeCitizen>) -> Result<()> {
+        init_citizen::initialize_citizen(ctx)
+    }
+
+    pub fn add_member(ctx: Context<AddMember>) -> Result<()> {
+    init_citizen::add_member(ctx)
+    }
+
+    pub fn obtain_voting_power(ctx: Context<ObtainVotingPower>, action: VotingPowerAction) -> Result<()> {
+        voting_power::obtain_voting_power(ctx, action)
     }
 
     pub fn create_treasury(ctx: Context<CreateTreasuryCpi>, name: String) -> Result<()> {
@@ -68,7 +103,10 @@ pub mod polycentric {
         let cpi_accounts = CreateTreasury {
             treasury: ctx.accounts.treasury.to_account_info(),
             owner: ctx.accounts.governance_pool.to_account_info(),
+            token_program: ctx.accounts.token_program.to_account_info(),
+            associated_token_program: ctx.accounts.associated_token_program.to_account_info(),
             system_program: ctx.accounts.system_program.to_account_info(),
+            rent: ctx.accounts.rent.to_account_info(),
         };
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
         
@@ -86,6 +124,7 @@ pub mod polycentric {
             mint: ctx.accounts.mint.to_account_info(),
             owner: ctx.accounts.governance_pool.to_account_info(),
             token_program: ctx.accounts.token_program.to_account_info(),
+            associated_token_program: ctx.accounts.associated_token_program.to_account_info(),
             system_program: ctx.accounts.system_program.to_account_info(),
             rent: ctx.accounts.rent.to_account_info(),
         };
@@ -119,6 +158,9 @@ pub struct CreateTreasuryCpi<'info> {
     pub admin: Signer<'info>,
     pub treasury_program: Program<'info, TheArkProgram>,
     pub system_program: Program<'info, System>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub token_program: Program<'info, Token>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 #[derive(Accounts)]
@@ -133,6 +175,7 @@ pub struct AddTokenToTreasuryCpi<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
     pub treasury_program: Program<'info, TheArkProgram>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,

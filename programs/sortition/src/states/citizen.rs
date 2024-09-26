@@ -10,14 +10,14 @@ pub struct Citizen {
     pub region: u8, 
     pub age_group: u8, 
     pub other_demographic: u8,
-    pub is_initialized: bool
+    pub is_initialized: bool,
+    pub bump: u8,
 }
 
 impl Citizen {
     pub const MAX_NAME_LENGTH: usize = 50;
 
-    pub fn space() -> usize {
-        8 + // discriminator
+    pub const SPACE: usize = 8 + // discriminator
         4 + Self::MAX_NAME_LENGTH + // name
         32 + // governance_pool
         1 + // is_eligible
@@ -25,8 +25,8 @@ impl Citizen {
         1 +
         1 +
         1 +
-        1
-    }
+        1 +
+        1; // bump
 
     pub fn try_load_by_pubkey<'info>(
         program_id: &Pubkey,

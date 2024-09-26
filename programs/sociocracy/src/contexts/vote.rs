@@ -5,7 +5,7 @@ use crate::errors::GovernanceError;
 #[derive(Accounts)]
 pub struct VoteOnProposal<'info> {
     #[account(mut)]
-    pub circle: Account<'info, Circle>,
+    pub circle: Box<Account<'info, Circle>>,
     #[account(mut)]
     pub proposal: Account<'info, Proposal>,
     #[account(mut)]
@@ -32,8 +32,12 @@ pub fn vote_on_proposal(ctx: Context<VoteOnProposal>, consent: bool) -> Result<(
     proposal.votes.push((member.key(), consent));
 
     // Check if all members have voted and there are no objections
-    if proposal.votes.len() == circle.members.len() && proposal.votes.iter().all(|(_, consent)| *consent) {
-        proposal.status = ProposalStatus::Passed;
+    if proposal.votes.len() == circle.members.len() {
+        if proposal.votes.iter().all(|(_, consent)| *consent) {
+            proposal.status = ProposalStatus::Passed;
+        } else {
+            proposal.status = ProposalStatus::Rejected;
+        }
     }
 
     Ok(())

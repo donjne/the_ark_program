@@ -9,6 +9,7 @@ pub struct Analytics {
     pub total_votes: u64,
     pub last_updated: i64,
     pub counted_pools: Vec<Pubkey>,
+    pub bump: u8,
 }
 
 impl Analytics {
@@ -21,7 +22,8 @@ impl Analytics {
         8 + // total_proposals
         8 + // total_votes
         8 + // last_updated
-        4 + (32 * Self::MAX_COUNTED_POOLS); // counted_pools (Vec<Pubkey>)
+        4 + (32 * Self::MAX_COUNTED_POOLS) + // counted_pools (Vec<Pubkey>)
+        1;
 
     pub fn increment_governance_pools(&mut self) {
         self.total_governance_pools += 1;

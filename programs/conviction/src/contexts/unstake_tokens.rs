@@ -27,7 +27,6 @@ pub struct UnstakeFromProposal<'info> {
         mut,
         associated_token::mint = mint,
         associated_token::authority = governance,
-        associated_token::token_program = token_program,
     )]
     pub proposal_account: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,
@@ -43,15 +42,19 @@ pub fn unstake(ctx: Context<UnstakeFromProposal>, amount: u64) -> Result<()> {
     require!(proposal.status == ProposalStatus::Active, ErrorCode::ProposalNotActive);
     require!(amount <= stake_account.amount, ErrorCode::InsufficientStake);
     require!(clock.unix_timestamp >= stake_account.lock_end, ErrorCode::StakeLocked);
+    let governance_key = ctx.accounts.governance.key();
+
+    let unstake_seeds = &[b"governance", governance_key.as_ref(), &[ctx.accounts.governance.bump]];
 
     transfer(
-        CpiContext::new(
+        CpiContext::new_with_signer(
             ctx.accounts.token_program.to_account_info(),
             Transfer {
                 from: ctx.accounts.proposal_account.to_account_info(),
                 to: ctx.accounts.user_token_account.to_account_info(),
                 authority: ctx.accounts.governance.to_account_info(),
             },
+            &[unstake_seeds]
         ),
         amount,
     )?;

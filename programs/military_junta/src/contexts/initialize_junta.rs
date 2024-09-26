@@ -1,9 +1,10 @@
 use anchor_lang::prelude::*;
-use crate::{states::junta::Junta, InitializeJuntaArgs};
+use crate::{states::junta::Junta, InitializeJuntaArgs, JuntaTokenType, PrimaryJuntaToken};
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{Mint, Token, TokenAccount},
+    token::{Mint, Token},
 };
+use crate::errors::ErrorCode;
 
 #[derive(Accounts)]
 #[instruction(args: InitializeJuntaArgs)]
@@ -11,21 +12,27 @@ pub struct InitializeJunta<'info> {
     #[account(
         init,
         payer = leader,
-        space = 8 + Junta::MAX_NAME_LENGTH + 32 + (32 * Junta::MAX_OFFICERS) + 8 + (32 * Junta::MAX_DECREES) + 1,
+        space = Junta::SPACE,
         seeds = [Junta::PREFIX_SEED, args.name.as_bytes()], 
         bump
     )]
     pub junta: Account<'info, Junta>,
-    pub mint: Account<'info, Mint>,
+
     #[account(mut)]
     pub leader: Signer<'info>,
-    #[account(
-        init_if_needed,
-        payer = leader,
-        associated_token::mint = mint,
-        associated_token::authority = junta,
-    )]
-    pub junta_ata: Account<'info, TokenAccount>,
+
+    /// CHECK: This account is optional and will be validated if provided
+    #[account(mut)]
+    pub nft_mint: Option<Account<'info, Mint>>,
+
+    /// CHECK: This account is optional and will be validated if provided
+    #[account(mut)]
+    pub spl_mint: Option<Account<'info, Mint>>,
+
+    /// CHECK: This account is optional and will be validated if provided
+    #[account(mut)]
+    pub sbt_mint: Option<Account<'info, Mint>>,
+
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
@@ -33,23 +40,6 @@ pub struct InitializeJunta<'info> {
 }
 
 pub fn initialize_junta(ctx: Context<InitializeJunta>, args: InitializeJuntaArgs) -> Result<()> {
-
-    // pub name: String,
-    // pub leader: Pubkey,
-    // pub officers: Vec<Pubkey>,
-    // pub resources: u64,
-    // pub decrees: Vec<Pubkey>,
-    // pub dissent_level: u8,
-    // pub control_level: u8,
-    // pub governance_token_mint: Option<Pubkey>,
-    // pub martial_law_active: bool,
-    // pub is_overthrown: bool,
-    // pub symbol: String,
-    // pub supply: u32,
-    // pub minteds: u32,
-    // pub price: u64,
-    // pub bump: u8,
-
     let junta = &mut ctx.accounts.junta;
 
     junta.name = args.name;
@@ -58,13 +48,78 @@ pub fn initialize_junta(ctx: Context<InitializeJunta>, args: InitializeJuntaArgs
     junta.resources = 100;
     junta.decrees = vec![];
     junta.dissent_level = 0;
-    junta.supply = args.supply;
-    junta.bump = ctx.bumps.junta;
-    junta.minteds = 0;
-    junta.is_overthrown = false;
+    junta.control_level = 200;
     junta.martial_law_active = false;
-    junta.collection_price = args.collection_price;
+    junta.is_overthrown = false;
     junta.support_threshold = args.support_threshold;
-    junta.vault = ctx.accounts.junta_ata.key();
+    junta.bump = ctx.bumps.junta;
+
+    if args.initialize_sbt {
+        require!(ctx.accounts.sbt_mint.is_some(), ErrorCode::MissingRequiredAccount);
+        let sbt_mint = ctx.accounts.sbt_mint.as_ref().unwrap();
+        junta.sbt_mint = Some(sbt_mint.key());
+        junta.total_sbt_token_supply = sbt_mint.supply;
+    }
+
+    if let Some(ref spl_config) = args.spl_config {
+        require!(ctx.accounts.spl_mint.is_some(), ErrorCode::MissingRequiredAccount);
+        let spl_mint = ctx.accounts.spl_mint.as_ref().unwrap();
+
+        match spl_config.token_type {
+            JuntaTokenType::New => {
+                let (expected_mint_pda, _) = Pubkey::find_program_address(
+                    &[Junta::SPL_PREFIX_SEED, junta.key().as_ref(), args.spl_symbol.as_bytes()],
+                    ctx.program_id
+                );
+                require!(spl_mint.key() == expected_mint_pda, ErrorCode::InvalidMint);
+            },
+            JuntaTokenType::Existing => {
+                require!(spl_mint.key() == spl_config.token_mint, ErrorCode::InvalidMint);
+            },
+        }
+        junta.spl_mint = Some(spl_mint.key());
+        junta.total_spl_token_supply = spl_mint.supply;
+        junta.spl_minted = 0;
+        junta.spl_symbol = args.spl_symbol;
+    }
+
+    // Handle NFT configuration
+    if let Some(ref nft_config) = args.nft_config {
+        require!(ctx.accounts.nft_mint.is_some(), ErrorCode::MissingRequiredAccount);
+        let nft_mint = ctx.accounts.nft_mint.as_ref().unwrap();
+
+        match nft_config.token_type {
+            JuntaTokenType::New => {
+                let (expected_mint_pda, _) = Pubkey::find_program_address(
+                    &[Junta::NFT_PREFIX_SEED, junta.key().as_ref(), args.nft_symbol.as_bytes()],
+                    ctx.program_id
+                );
+                require!(nft_mint.key() == expected_mint_pda, ErrorCode::InvalidMint);
+            },
+            JuntaTokenType::Existing => {
+                require!(nft_mint.key() == nft_config.token_mint, ErrorCode::InvalidMint);
+            },
+        }
+        junta.nft_mint = Some(nft_mint.key());
+        junta.total_nft_token_supply = nft_mint.supply;
+        junta.nft_minted = 0;
+        junta.nft_symbol = args.nft_symbol;
+        junta.collection_price = args.collection_price;
+    }
+
+    // Set primary governance token
+    match args.primary_junta_token {
+        PrimaryJuntaToken::NFT => {
+            require!(args.nft_config.is_some(), ErrorCode::MissingNFTConfig);
+            junta.governance_token_mint = junta.nft_mint.unwrap();
+        },
+        PrimaryJuntaToken::SPL => {
+            require!(args.spl_config.is_some(), ErrorCode::MissingSPLConfig);
+            junta.governance_token_mint = junta.spl_mint.unwrap();
+        },
+    }
+
+    require!(args.nft_config.is_some() || args.spl_config.is_some(), ErrorCode::NoJuntaTokenSpecified);
+
     Ok(())
 }

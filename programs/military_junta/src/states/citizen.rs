@@ -9,6 +9,8 @@ pub struct Citizen {
     pub is_dissident: bool,
     pub is_imprisoned: bool,
     pub imprisonment_end: Option<i64>,
+    pub joined_at: i64,
+    pub bump: u8,
 }
 
 impl Citizen {
@@ -18,5 +20,7 @@ impl Citizen {
         8 + // resources
         1 + // is_dissident
         1 + // is_imprisoned
-        8; // imprisonment_end (Option<i64>)
+        8 + // imprisonment_end (Option<i64>)
+        8 + // joined_at
+        1; // bump
 }

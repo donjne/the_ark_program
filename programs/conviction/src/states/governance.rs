@@ -6,12 +6,15 @@ pub struct Governance {
     pub description: String,
     pub creator: Pubkey,
     pub governance_token_mint: Pubkey,
-    pub nft_mint: Pubkey,
-    pub spl_mint: Pubkey,
-    pub sbt_mint: Pubkey,
+    pub nft_mint: Option<Pubkey>,
+    pub spl_mint: Option<Pubkey>,
+    pub sbt_mint: Option<Pubkey>,
     pub nft_minted: u32,
     pub spl_minted: u32,
     pub sbt_minted: u32,
+    pub nft_symbol: String,
+    pub spl_symbol: String,
+    pub symbol: String,
     pub approval_threshold: u64,
     pub resources: u64,
     pub total_proposals: u64,
@@ -42,9 +45,9 @@ impl Governance {
         4 + Self::MAX_SYMBOL_LEN + // symbol (4 bytes for length + symbol content)
         32 + // creator
         32 + // governance_token_mint
-        32 + // nft_token_mint
-        32 + // spl_token_mint
-        32 + // sbt token mint
+        33 + // nft_token_mint
+        33 + // spl_token_mint
+        33 + // sbt token mint
         4 + // nft minted
         4 + // spl minted
         4 + // sbt minted
@@ -65,6 +68,8 @@ pub struct InitializeGovernanceArgs {
     pub description: String,
     pub nft_symbol: String,
     pub spl_symbol: String,
+    pub nft_supply: u64,
+    pub spl_supply: u64,
     pub approval_threshold: u64,
     pub min_stake_amount: u64,
     pub collection_price: u64,

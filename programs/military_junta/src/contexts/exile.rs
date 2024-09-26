@@ -12,8 +12,12 @@ pub struct ExileCitizen<'info> {
     pub mint: Account<'info, Mint>, 
     #[account(mut)]
     pub leader: Signer<'info>,
-    #[account(mut)]
-    pub citizen: Account<'info, Citizen>,
+    #[account(
+        mut, 
+        seeds = [b"citizen", junta.key().as_ref(), &junta.total_subjects.to_le_bytes()],
+        bump = citizen.bump
+    )]
+    pub citizen: Box<Account<'info, Citizen>>,
     #[account(
         init_if_needed,
         payer = leader,
@@ -39,14 +43,24 @@ pub fn burn_governance_tokens<'info>(
         return Err(ErrorCode::Unauthorized.into());
     }
 
+    let junta_key = ctx.accounts.junta.key();
+    let junta_subjects = junta.total_subjects.to_le_bytes();
+    let seeds = &[
+        b"citizen",
+        junta_key.as_ref(),
+        junta_subjects.as_ref(),
+        &[ctx.accounts.junta.bump],
+    ];
+    let signer_seeds = &[&seeds[..]];
+
     let cpi_accounts = Burn {
         mint: ctx.accounts.mint.to_account_info(),
         from: ctx.accounts.citizen_ata.to_account_info(),
-        authority: ctx.accounts.leader.to_account_info(),
+        authority: ctx.accounts.citizen.to_account_info(),
     };
 
     let cpi_program = ctx.accounts.token_program.to_account_info();
-    let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+    let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds);
 
     token::burn(cpi_ctx, amount)?;
 

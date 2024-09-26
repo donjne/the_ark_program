@@ -16,6 +16,8 @@ pub struct InitializeAnalytics<'info> {
     pub admin: Signer<'info>,
 
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
+
 }
 
 #[derive(Accounts)]
@@ -23,11 +25,15 @@ pub struct UpdateAnalytics<'info> {
     #[account(mut)]
     pub analytics: Account<'info, Analytics>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [b"governance_pool", admin.key().as_ref()],
+        bump =  governance_pool.bump,
+    )]
     pub governance_pool: Account<'info, GovernancePool>,
 
     #[account(mut)]
-    pub updater: Signer<'info>,
+    pub admin: Signer<'info>,
 
     pub clock: Sysvar<'info, Clock>,
 }
@@ -41,6 +47,7 @@ pub fn initialize_analytics(ctx: Context<InitializeAnalytics>) -> Result<()> {
     analytics.total_votes = 0;
     analytics.last_updated = 0;
     analytics.counted_pools = Vec::new();
+    analytics.bump = ctx.bumps.analytics;
     Ok(())
 }
 

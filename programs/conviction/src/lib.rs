@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{Token, Mint};
+use anchor_spl::{token::{Token, Mint}, associated_token::AssociatedToken};
 use the_ark_program::cpi::accounts::{RegisterGovernment, AddTokenToTreasury, CreateTreasury};
 use the_ark_program::program::TheArkProgram;
 use the_ark_program::state::analytics::ArkAnalytics;
@@ -58,6 +58,13 @@ pub mod conviction {
         create_proposal(ctx, description, voting_period, execution_delay, proposal_type)
     }
 
+    pub fn send_decision_to_router(
+        ctx: Context<SendProposalDecision>,
+        instruction_data: Vec<u8>
+    ) -> Result<()> {
+        send_proposal_decision_to_router(ctx, instruction_data)
+    }
+
     pub fn conclude_proposal(ctx: Context<EndAndExecuteProposal>) -> Result<()> {
         end_and_execute_proposal(ctx)
     }
@@ -100,6 +107,10 @@ pub mod conviction {
         stake(ctx, amount, lock_period)
     }
 
+    pub fn add_new_member(ctx: Context<AddMember>) -> Result<()> {
+        add_member(ctx)
+    }
+
     pub fn unstake_nft_from_vault(ctx: Context<UnstakeNftFromProposal>) -> Result<()> {
         unstake_nft(ctx)
     }
@@ -113,7 +124,10 @@ pub mod conviction {
         let cpi_accounts = CreateTreasury {
             treasury: ctx.accounts.treasury.to_account_info(),
             owner: ctx.accounts.governance.to_account_info(),
+            token_program: ctx.accounts.token_program.to_account_info(),
+            associated_token_program: ctx.accounts.associated_token_program.to_account_info(),
             system_program: ctx.accounts.system_program.to_account_info(),
+            rent: ctx.accounts.rent.to_account_info(),
         };
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
         
@@ -131,6 +145,7 @@ pub mod conviction {
             mint: ctx.accounts.mint.to_account_info(),
             owner: ctx.accounts.governance.to_account_info(),
             token_program: ctx.accounts.token_program.to_account_info(),
+            associated_token_program: ctx.accounts.associated_token_program.to_account_info(),
             system_program: ctx.accounts.system_program.to_account_info(),
             rent: ctx.accounts.rent.to_account_info(),
         };
@@ -164,6 +179,9 @@ pub struct CreateTreasuryCpi<'info> {
     pub admin: Signer<'info>,
     pub treasury_program: Program<'info, TheArkProgram>,
     pub system_program: Program<'info, System>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub token_program: Program<'info, Token>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 #[derive(Accounts)]
@@ -178,8 +196,9 @@ pub struct AddTokenToTreasuryCpi<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
     pub treasury_program: Program<'info, TheArkProgram>,
-    pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub token_program: Program<'info, Token>,
     pub rent: Sysvar<'info, Rent>,
 }
 

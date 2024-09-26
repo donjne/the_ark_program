@@ -14,6 +14,7 @@ pub struct InitializeStakeAccount<'info> {
     )]
     pub stake_account: Box<Account<'info, StakeAccount>>,
     pub system_program: Program<'info, System>,
+    pub rent: Sysvar<'info, Rent>,
 }
 
 pub fn initialize_stake_account(ctx: Context<InitializeStakeAccount>) -> Result<()> {

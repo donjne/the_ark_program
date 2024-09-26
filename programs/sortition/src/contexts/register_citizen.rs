@@ -10,7 +10,7 @@ pub struct RegisterCitizen<'info> {
     #[account(
         init,
         payer = citizen,
-        space = Citizen::space(),
+        space = Citizen::SPACE,
         seeds = [b"citizen", governance_pool.key().as_ref(), citizen.key().as_ref()],
         bump
     )]

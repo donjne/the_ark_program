@@ -34,4 +34,8 @@ pub enum ErrorCode {
     PollAlreadyExecuted,
     #[msg("No Deposits Ready To Claim For This User In This DAO.")]
     NoDepositsReadyToClaimForThisUserInThisDAO,
+    #[msg("Maximum members have been reached.")]
+    MaxMembersReached,
+    #[msg("Arithmetic Error")]
+    ArithmeticError
 }

@@ -4,17 +4,29 @@ use crate::error::GovernanceError;
 
 #[derive(Accounts)]
 pub struct ExecuteProposal<'info> {
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [b"governance_pool", admin.key().as_ref()],
+        bump =  governance_pool.bump,
+        has_one = admin
+    )]
     pub governance_pool: Account<'info, GovernancePool>,
     
-    #[account(mut)]
+    #[account(mut,
+    seeds = [b"policy_area", governance_pool.key().as_ref(), &governance_pool.policy_areas.len().to_le_bytes()],
+    bump = policy_area.bump
+    )]
     pub policy_area: Account<'info, PolicyArea>,
     
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [b"proposal", policy_area.key().as_ref(), &policy_area.proposals.len().to_le_bytes()],
+        bump = proposal.bump
+    )]
     pub proposal: Account<'info, Proposal>,
     
     #[account(mut)]
-    pub executor: Signer<'info>,
+    pub admin: Signer<'info>,
     
     #[account(
         constraint = assembly.governance_pool == governance_pool.key() 
@@ -27,7 +39,7 @@ pub struct ExecuteProposal<'info> {
 
 pub fn handler(ctx: Context<ExecuteProposal>) -> Result<()> {
     let proposal = &mut ctx.accounts.proposal;
-    let executor = &ctx.accounts.executor;
+    let executor = &ctx.accounts.admin;
     let assembly = &ctx.accounts.assembly;
     let clock = &ctx.accounts.clock;
 
@@ -40,13 +52,13 @@ pub fn handler(ctx: Context<ExecuteProposal>) -> Result<()> {
 
     // Finalize the proposal if it hasn't been done yet
     if proposal.status == ProposalStatus::Active {
-        proposal.finalize();
+        proposal.finalize_proposal()?;
     }
 
     // Execute the proposal
     proposal.execute()?;
 
-    // Here, you would typically implement the actual execution logic
+    // Here, we would typically implement the actual execution logic
     // This could involve calling other instructions, transferring funds, etc.
     // For now, we'll just emit an event
 

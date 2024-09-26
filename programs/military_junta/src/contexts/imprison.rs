@@ -9,20 +9,23 @@ use anchor_spl::associated_token::AssociatedToken;
 pub struct ImprisonCitizen<'info> {
     #[account(mut)]
     pub junta: Account<'info, Junta>,
-    #[account(mut)]
-    pub citizen: Account<'info, Citizen>,
+    #[account(
+        mut, 
+        seeds = [b"citizen", junta.key().as_ref(), &junta.total_subjects.to_le_bytes()],
+        bump = citizen.bump
+    )]
+    pub citizen: Box<Account<'info, Citizen>>,
     #[account(mut)]
     pub leader: Signer<'info>, 
     #[account(mut)]
     pub mint: Account<'info, Mint>,
-    #[account(mut)]
+    #[account(mut, constraint = citizen_ata.owner == citizen.key(),)]
     pub citizen_ata: Account<'info, TokenAccount>, // Citizen's governance token account
     #[account(
-        init,
+        init_if_needed,
         payer = leader,
         associated_token::mint = mint,
         associated_token::authority = junta,
-        associated_token::token_program = token_program,
     )]
     pub junta_ata: Account<'info, TokenAccount>, 
     pub token_program: Program<'info, Token>,
@@ -43,14 +46,24 @@ pub fn seize_governance_tokens<'info>(
         return Err(ErrorCode::Unauthorized.into());
     }
 
+    let junta_key = ctx.accounts.junta.key();
+    let junta_subjects = junta.total_subjects.to_le_bytes();
+    let seeds = &[
+        b"citizen",
+        junta_key.as_ref(),
+        junta_subjects.as_ref(),
+        &[ctx.accounts.junta.bump],
+    ];
+    let signer_seeds = &[&seeds[..]];
+
     let cpi_accounts = Transfer {
         from: ctx.accounts.citizen_ata.to_account_info(),
         to: ctx.accounts.junta_ata.to_account_info(),
-        authority: ctx.accounts.leader.to_account_info(),
+        authority: ctx.accounts.citizen.to_account_info(),
     };
 
     let cpi_program = ctx.accounts.token_program.to_account_info();
-    let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+    let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds);
     token::transfer(cpi_ctx, amount)?;
 
     Ok(())

@@ -10,6 +10,9 @@ pub struct Subject {
     pub wealth: u64,
     pub is_convicted: bool,
     pub jurisdiction: String,
+    pub appointed_at: i64,
+    pub bump: u8
+
 }
 
 impl Subject {
@@ -18,8 +21,7 @@ impl Subject {
     pub const MAXIMUM_NOBILITY_TITLE_LENGTH: usize = 50;
     pub const MAXIMUM_JURISDICTION_LENGTH: usize = 50;
 
-    pub fn space() -> usize {
-        8 +  // discriminator
+    pub const SPACE: usize = 8 +  // discriminator
         32 + // key (Pubkey)
         4 + Self::MAXIMUM_NAME_LENGTH + // name (String)
         4 + Self::MAXIMUM_ROLE_LENGTH + // role (String)
@@ -27,6 +29,7 @@ impl Subject {
         1 + // loyalty (u8)
         8 + // wealth (u64)
         1 + // is_convicted (bool)
-        4 + Self::MAXIMUM_JURISDICTION_LENGTH // jurisdiction (String)
-    }
+        4 + Self::MAXIMUM_JURISDICTION_LENGTH + // jurisdiction (String)
+        8 + // appointed_at
+        1;
 }

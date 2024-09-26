@@ -45,7 +45,6 @@ pub struct MintNft<'info> {
         payer = signer,
         associated_token::mint = mint,
         associated_token::authority = signer,
-        associated_token::token_program = token_program,
     )]
     pub citizen_ata: InterfaceAccount<'info, TokenAccount>,
 
@@ -58,6 +57,7 @@ pub struct MintNft<'info> {
 pub fn mint_nft(ctx: Context<MintNft>, args: MintNftArgs) -> Result<()> {
     let governance = &mut ctx.accounts.governance;
     let governance_key = governance.key();
+    governance.nft_symbol = args.symbol.clone();
 
     let seeds = &[
         Governance::NFT_PREFIX_SEED,
@@ -154,6 +154,8 @@ pub fn mint_nft(ctx: Context<MintNft>, args: MintNftArgs) -> Result<()> {
     )?;
 
     governance.nft_minted += 1;
+    governance.total_nft_token_supply += 1;
+
 
     emit!(NftMinted {
         conviction_governance: governance.key(),

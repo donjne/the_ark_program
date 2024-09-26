@@ -33,8 +33,8 @@ pub struct DAOCreate<'info> {
         associated_token::mint = mint,
         associated_token::authority = creator,
     )]
-    pub signer_ata: Box<Account<'info, TokenAccount>>,
-    pub mint: Box<Account<'info, Mint>>,
+    pub signer_ata: Account<'info, TokenAccount>,
+    pub mint: Account<'info, Mint>,
     #[account(
         init,
         payer = creator,
@@ -43,7 +43,7 @@ pub struct DAOCreate<'info> {
         token::authority = auth,
         bump
     )]
-    pub vault: Box<Account<'info, TokenAccount>>,
+    pub vault: Account<'info, TokenAccount>,
     #[account(
         mut,
         seeds = [b"analytics"],
