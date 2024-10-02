@@ -93,15 +93,11 @@ pub struct AddMember<'info> {
     #[account(
         init,
         payer = authority,
-        space = KingdomMemberRecord::SPACE,
-        seeds = [
-            b"kingdom_member",
-            kingdom.key().as_ref(),
-            authority.key().as_ref()
-        ],
+        space = Subject::SPACE,
+        seeds = [b"subject", kingdom.key().as_ref(), &kingdom.total_subjects.to_le_bytes()],
         bump
     )]
-    pub member_record: Account<'info, KingdomMemberRecord>,
+    pub subject: Account<'info, Subject>,
 
     #[account(
         init_if_needed,
@@ -120,31 +116,9 @@ pub struct AddMember<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-#[account]
-pub struct KingdomMemberRecord {
-    pub kingdom: Pubkey,
-    pub member: Pubkey,
-    pub joined_at: i64,
-    pub role: String,
-    pub loyalty: u8,
-    pub is_convicted: bool,
-    pub bump: u8,
-}
-
-impl KingdomMemberRecord {
-    pub const SPACE: usize = 8 + // discriminator
-        32 + // kingdom
-        32 + // member
-        8 +  // joined_at
-        4 + 32 + // role (String)
-        1 +  // loyalty
-        1 +  // is_convicted
-        1;  // bump
-}
-
 pub fn add_member(ctx: Context<AddMember>) -> Result<()> {
     let kingdom = &mut ctx.accounts.kingdom;
-    let member_record = &mut ctx.accounts.member_record;
+    let subject = &mut ctx.accounts.subject;
     let member_token_account = &ctx.accounts.member_token_account;
 
     // Check if the member has the required tokens
@@ -153,13 +127,14 @@ pub fn add_member(ctx: Context<AddMember>) -> Result<()> {
         AbsoluteMonarchyError::InsufficientTokens
     );
 
-    member_record.kingdom = kingdom.key();
-    member_record.member = ctx.accounts.authority.key();
-    member_record.role = "Citizen".to_string();
-    member_record.loyalty = 50; // Start with neutral loyalty
-    member_record.is_convicted = false;
-    member_record.joined_at = Clock::get()?.unix_timestamp;
-    member_record.bump = ctx.bumps.member_record;
+    subject.key = subject.key();
+    subject.role = "Citizen".to_string();
+    subject.jurisdiction = "Kingdom".to_string();
+    subject.loyalty = 50; // Start with neutral loyalty
+    subject.wealth = 0;
+    subject.is_convicted = false;
+    subject.appointed_at = Clock::get()?.unix_timestamp;
+    subject.bump = ctx.bumps.subject;
 
     kingdom.total_subjects += 1;
 
@@ -171,7 +146,7 @@ pub fn add_member(ctx: Context<AddMember>) -> Result<()> {
     emit!(MemberAdded {
         kingdom: kingdom.key(),
         member: ctx.accounts.authority.key(),
-        joined_at: member_record.joined_at,
+        joined_at: subject.appointed_at,
     });
 
     Ok(())

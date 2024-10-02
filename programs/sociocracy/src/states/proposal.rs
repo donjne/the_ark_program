@@ -5,7 +5,7 @@ pub struct Proposal {
     pub circle: Pubkey,
     pub proposer: Pubkey,
     pub description: String,
-    pub votes: Vec<(Pubkey, bool)>, // (member, consent)
+    pub votes: Vec<(Pubkey, bool)>, 
     pub status: ProposalStatus,
     pub bump: u8,
 }

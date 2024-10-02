@@ -29,10 +29,6 @@ pub struct InitializeJunta<'info> {
     #[account(mut)]
     pub spl_mint: Option<Account<'info, Mint>>,
 
-    /// CHECK: This account is optional and will be validated if provided
-    #[account(mut)]
-    pub sbt_mint: Option<Account<'info, Mint>>,
-
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
@@ -53,13 +49,6 @@ pub fn initialize_junta(ctx: Context<InitializeJunta>, args: InitializeJuntaArgs
     junta.is_overthrown = false;
     junta.support_threshold = args.support_threshold;
     junta.bump = ctx.bumps.junta;
-
-    if args.initialize_sbt {
-        require!(ctx.accounts.sbt_mint.is_some(), ErrorCode::MissingRequiredAccount);
-        let sbt_mint = ctx.accounts.sbt_mint.as_ref().unwrap();
-        junta.sbt_mint = Some(sbt_mint.key());
-        junta.total_sbt_token_supply = sbt_mint.supply;
-    }
 
     if let Some(ref spl_config) = args.spl_config {
         require!(ctx.accounts.spl_mint.is_some(), ErrorCode::MissingRequiredAccount);

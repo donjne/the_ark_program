@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use crate::states::{Kingdom, MintNftArgs, Subject};
+use crate::states::{Kingdom, MintNftArgs};
 
 use anchor_lang::solana_program::account_info::AccountInfo;
 use anchor_lang::solana_program::program::invoke_signed;
@@ -24,15 +24,6 @@ pub struct MintNft<'info> {
     pub kingdom: Box<Account<'info, Kingdom>>,
 
     #[account(
-        init_if_needed,
-        payer = signer,
-        space = Subject::SPACE,
-        seeds = [b"subject", kingdom.key().as_ref(), &kingdom.total_subjects.to_le_bytes()],
-        bump
-    )]
-    pub subject: Box<Account<'info, Subject>>,
-
-    #[account(
         init,
         payer = signer,
         mint::decimals = 0,
@@ -42,12 +33,7 @@ pub struct MintNft<'info> {
     )]
     pub mint: InterfaceAccount<'info, Mint>,
 
-    #[account(
-        init_if_needed,
-        payer = signer,
-        associated_token::mint = mint,
-        associated_token::authority = subject
-    )]
+    #[account(mut)]
     pub subject_token_account: InterfaceAccount<'info, TokenAccount>,
 
     pub rent: Sysvar<'info, Rent>,
@@ -154,19 +140,10 @@ pub fn mint_nft(ctx: Context<MintNft>, args: MintNftArgs) -> Result<()> {
     kingdom.nft_minted += 1;
     kingdom.total_subjects += 1;
 
-    let subject = &mut ctx.accounts.subject;
-    subject.key = subject.key();
-    subject.role = "Citizen".to_string();
-    subject.jurisdiction = "Kingdom".to_string();
-    subject.loyalty = 50; // Start with neutral loyalty
-    subject.wealth = 0;
-    subject.is_convicted = false;
-    subject.appointed_at = Clock::get()?.unix_timestamp;
-
     emit!(NftMinted {
         absolute_monarchy_kingdom: kingdom.key(),
         mint: ctx.accounts.mint.key(),
-        owner: ctx.accounts.subject.key(),
+        owner: ctx.accounts.subject_token_account.key(),
         name: args.name.clone(),
         symbol: args.symbol.clone(),
         uri: args.uri.clone(),

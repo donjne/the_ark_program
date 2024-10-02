@@ -58,7 +58,6 @@ pub struct InitializeJuntaArgs {
     pub nft_supply: u64,
     pub spl_supply: u64,
     pub primary_junta_token: PrimaryJuntaToken,
-    pub initialize_sbt: bool,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize)]

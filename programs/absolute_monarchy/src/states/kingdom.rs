@@ -105,7 +105,6 @@ pub struct InitializeKingdomArgs {
     pub nft_config: Option<TokenConfig>,
     pub spl_config: Option<TokenConfig>,
     pub primary_kingdom_token: PrimaryKingdomToken,
-    pub initialize_sbt: bool,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
@@ -127,7 +126,7 @@ pub struct MintNftArgs {
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct TokenConfig {
     pub token_type: KingdomTokenType,
-    pub custom_mint: Option<Pubkey>,
+    pub custom_mint: Pubkey,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]

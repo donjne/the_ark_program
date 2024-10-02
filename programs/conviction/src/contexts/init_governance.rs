@@ -24,9 +24,6 @@ pub struct InitializeGovernance<'info> {
     #[account(mut)]
     pub spl_mint: Option<Account<'info, Mint>>,
 
-    /// CHECK: This account is optional and will be validated if provided
-    #[account(mut)]
-    pub sbt_mint: Option<Account<'info, Mint>>,
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub rent: Sysvar<'info, Rent>,
@@ -65,13 +62,6 @@ pub fn initialize_governance(
     governance.collection_price = args.collection_price;
     governance.bump = ctx.bumps.governance;
 
-    if args.initialize_sbt {
-        require!(ctx.accounts.sbt_mint.is_some(), ErrorCode::MissingRequiredAccount);
-        let sbt_mint = ctx.accounts.sbt_mint.as_ref().unwrap();
-        governance.sbt_mint = Some(sbt_mint.key());
-        governance.total_sbt_token_supply = sbt_mint.supply;
-    }
-
     if let Some(ref nft_config) = nft_config {
         match nft_config.token_type {
             GovernanceTokenType::New => {
@@ -96,6 +86,7 @@ pub fn initialize_governance(
             GovernanceTokenType::Existing => {
                 require!(ctx.accounts.nft_mint.is_some(), ErrorCode::MissingRequiredAccount);
                 let nft_mint = ctx.accounts.nft_mint.as_ref().unwrap();
+                require!(nft_mint.key() == nft_config.custom_mint, ErrorCode::InvalidMint);
                 governance.nft_mint = Some(nft_mint.key());
                 governance.total_nft_token_supply = nft_mint.supply;
                 governance.nft_minted = nft_mint.supply as u32;
@@ -129,6 +120,7 @@ pub fn initialize_governance(
             GovernanceTokenType::Existing => {
                 require!(ctx.accounts.spl_mint.is_some(), ErrorCode::MissingRequiredAccount);
                 let spl_mint = ctx.accounts.spl_mint.as_ref().unwrap();
+                require!(spl_mint.key() == spl_config.custom_mint, ErrorCode::InvalidSPLMint);
                 governance.spl_mint = Some(spl_mint.key());
                 governance.total_spl_token_supply = spl_mint.supply;
                 governance.spl_minted = spl_mint.supply as u32;

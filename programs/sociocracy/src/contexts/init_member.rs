@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use crate::states::{Circle, Member};
+use crate::states::Member;
 use crate::errors::GovernanceError;
 
 #[derive(Accounts)]

@@ -113,7 +113,6 @@ pub struct InitializeGovernmentArgs {
     pub nft_config: Option<GovernanceTokenConfig>,
     pub spl_config: Option<GovernanceTokenConfig>,
     pub primary_governance_token: PrimaryGovernanceToken,
-    pub initialize_sbt: bool,
     pub nft_symbol: String,
     pub spl_symbol: String,
     pub collection_price: u64,
@@ -128,6 +127,7 @@ pub enum GovernanceTokenType {
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct GovernanceTokenConfig {
     pub token_type: GovernanceTokenType,
+    pub token_mint: Pubkey,
 }
 
 #[derive(Default)]

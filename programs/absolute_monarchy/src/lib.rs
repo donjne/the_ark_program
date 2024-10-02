@@ -34,7 +34,7 @@ pub mod absolute_monarchy {
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
         
         // Make the CPI call
-        register_government(cpi_ctx, name, GovernmentType::Autocracy)?;
+        register_government(cpi_ctx, name, GovernmentType::Monarchy)?;
     
         Ok(())
     }

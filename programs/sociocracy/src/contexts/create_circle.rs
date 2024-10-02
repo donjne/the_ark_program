@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use crate::states::{Circle, CircleType, CircleTokenType, CreateCircleArgs, PrimaryGovernanceToken};
+use crate::states::{Circle, CircleTokenType, CreateCircleArgs, PrimaryGovernanceToken};
 use anchor_spl::token::Mint;
 use crate::errors::GovernanceError;
 
@@ -28,10 +28,6 @@ pub struct CreateCircle<'info> {
     /// CHECK: This account is optional and will be validated if provided
     #[account(mut)]
     pub spl_mint: Option<Account<'info, Mint>>,
-
-    /// CHECK: This account is optional and will be validated if provided
-    #[account(mut)]
-    pub sbt_mint: Option<Account<'info, Mint>>,
 
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,

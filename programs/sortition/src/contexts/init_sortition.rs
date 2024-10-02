@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::Mint;
-use crate::states::{GovernancePool, DemographicQuotas, InitializeGovernmentArgs, GovernanceTokenConfig, GovernanceTokenType, PrimaryGovernanceToken};
+use crate::states::{GovernancePool, DemographicQuotas, InitializeGovernmentArgs, GovernanceTokenType, PrimaryGovernanceToken};
 use crate::error::GovernanceError;
 
 #[derive(Accounts)]
@@ -25,10 +25,6 @@ pub struct InitializeGovernance<'info> {
     /// CHECK: This account is optional and will be validated if provided
     #[account(mut)]
     pub spl_mint: Option<Account<'info, Mint>>,
-
-    /// CHECK: This account is optional and will be validated if provided
-    #[account(mut)]
-    pub sbt_mint: Option<Account<'info, Mint>>,
 
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
@@ -102,14 +98,6 @@ pub fn initialize_governance(ctx: Context<InitializeGovernance>, args: Initializ
         governance_pool.spl_mint = Some(spl_mint.key());
         governance_pool.total_spl_token_supply = spl_mint.supply;
         governance_pool.spl_symbol = args.spl_symbol;
-    }
-
-    // Handle SBT configuration
-    if args.initialize_sbt {
-        require!(ctx.accounts.sbt_mint.is_some(), GovernanceError::MissingRequiredAccount);
-        let sbt_mint = ctx.accounts.sbt_mint.as_ref().unwrap();
-        governance_pool.sbt_mint = Some(sbt_mint.key());
-        governance_pool.total_sbt_token_supply = 0; // Initialize to 0, will be updated when minting SBTs
     }
 
     // Set primary governance token

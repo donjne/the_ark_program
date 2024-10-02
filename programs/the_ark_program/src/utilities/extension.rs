@@ -3,7 +3,6 @@ use anchor_lang::{
     solana_program::{
         account_info::AccountInfo,
         program::invoke,
-        pubkey::Pubkey,
         rent::Rent,
         system_instruction::transfer,
         sysvar::Sysvar,

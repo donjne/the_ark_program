@@ -44,7 +44,6 @@ pub struct InitializeGovernmentArgs {
     pub spl_supply: u64,
     pub collection_price: u64,
     pub primary_governance_token: PrimaryGovernanceToken,
-    pub initialize_sbt: bool,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]

@@ -32,10 +32,6 @@ pub struct InitializeGovernment<'info> {
     /// CHECK: This account is optional and will be validated if provided
     #[account(mut)]
     pub spl_mint: Option<Account<'info, Mint>>,
-
-    /// CHECK: This account is optional and will be validated if provided
-    #[account(mut)]
-    pub sbt_mint: Option<Account<'info, Mint>>,
     
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
@@ -67,13 +63,6 @@ pub fn handler(ctx: Context<InitializeGovernment>, args: InitializeGovernmentArg
     governance_pool.resources = 0;
     governance_pool.bump = ctx.bumps.governance_pool;
 
-    if args.initialize_sbt {
-        require!(ctx.accounts.sbt_mint.is_some(), GovernanceError::MissingRequiredAccount);
-        let sbt_mint = ctx.accounts.sbt_mint.as_ref().unwrap();
-        governance_pool.sbt_mint = Some(sbt_mint.key());
-        governance_pool.total_sbt_token_supply = sbt_mint.supply;
-    }
-
 
     if let Some(ref nft_config) = args.nft_config {
         match nft_config.token_type {
@@ -95,6 +84,7 @@ pub fn handler(ctx: Context<InitializeGovernment>, args: InitializeGovernmentArg
             GovernanceTokenType::Existing => {
                 require!(ctx.accounts.nft_mint.is_some(), GovernanceError::MissingRequiredAccount);
                 let nft_mint = ctx.accounts.nft_mint.as_ref().unwrap();
+                require!(nft_mint.key() == nft_config.token_mint, GovernanceError::InvalidNFTMint);
                 governance_pool.nft_mint = Some(nft_mint.key());
                 governance_pool.total_nft_token_supply = nft_mint.supply;
             },
@@ -121,6 +111,7 @@ pub fn handler(ctx: Context<InitializeGovernment>, args: InitializeGovernmentArg
             GovernanceTokenType::Existing => {
                 require!(ctx.accounts.spl_mint.is_some(), GovernanceError::MissingRequiredAccount);
                 let spl_mint = ctx.accounts.spl_mint.as_ref().unwrap();
+                require!(spl_mint.key() == spl_config.token_mint, GovernanceError::InvalidSPLMint);
                 governance_pool.spl_mint = Some(spl_mint.key());
                 governance_pool.total_spl_token_supply = spl_mint.supply;
             },

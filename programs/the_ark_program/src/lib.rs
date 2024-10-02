@@ -33,32 +33,6 @@ pub mod the_ark_program {
         Ok(())
     }
 
-    pub fn init_escrow(ctx: Context<InitEscrow>) -> Result<()> {
-        let escrow_info = &mut ctx.accounts.escrow_info;
-        escrow_info.total_trades = 0;
-        escrow_info.trades = Vec::new();
-        escrow_info.total_services = 0;
-        escrow_info.total_fees_collected = 0;
-        escrow_info.total_amount_transferred = 0;
-        Ok(())
-    }
-
-    pub fn register_trades(ctx: Context<RegisterTrade>, trade_address: Pubkey) -> Result<()> {
-        let escrow_info = &mut ctx.accounts.escrow_info;
-        escrow_info.total_trades += 1;
-        escrow_info.trades.push(trade_address);
-
-        Ok(())
-    }
-
-    pub fn register_services(ctx: Context<RegisterService>, services_address: Pubkey) -> Result<()> {
-        let escrow_info = &mut ctx.accounts.escrow_info;
-        escrow_info.total_services += 1;
-        escrow_info.services.push(services_address);
-
-        Ok(())
-    }
-
     pub fn register_government(ctx: Context<RegisterGovernment>, name: String, government_type: GovernmentType) -> Result<()> {
         require!(name.len() <= StateInfo::MAX_NAME_LENGTH, ErrorCode::NameTooLong);
 

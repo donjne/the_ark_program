@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{Mint, Token, TokenAccount};
-use crate::states::{Monarch, Treasury, Kingdom, InitializeKingdomArgs, KingdomTokenType, PrimaryKingdomToken};
+use anchor_spl::token::{Mint, Token};
+use crate::states::{Monarch, Kingdom, InitializeKingdomArgs, KingdomTokenType, PrimaryKingdomToken};
 use crate::error::AbsoluteMonarchyError;
 use anchor_spl::associated_token::AssociatedToken;
 
@@ -33,10 +33,6 @@ pub struct InitializeKingdom<'info> {
     /// CHECK: This account is optional and will be validated if provided
     #[account(mut)]
     pub spl_mint: Option<Account<'info, Mint>>,
-
-    /// CHECK: This account is optional and will be validated if provided
-    #[account(mut)]
-    pub sbt_mint: Option<Account<'info, Mint>>,
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -91,13 +87,6 @@ pub fn initialize_kingdom(
     kingdom.membership_tokens_threshold = args.membership_tokens_threshold;
     kingdom.bump = ctx.bumps.kingdom;
 
-    if args.initialize_sbt {
-        require!(ctx.accounts.sbt_mint.is_some(), AbsoluteMonarchyError::MissingRequiredAccount);
-        let sbt_mint = ctx.accounts.sbt_mint.as_ref().unwrap();
-        kingdom.sbt_mint = Some(sbt_mint.key());
-        kingdom.total_sbt_token_supply = sbt_mint.supply;
-    }
-
     if let Some(ref nft_config) = args.nft_config {
         match nft_config.token_type {
             KingdomTokenType::New => {
@@ -119,6 +108,7 @@ pub fn initialize_kingdom(
             KingdomTokenType::Existing => {
                 require!(ctx.accounts.nft_mint.is_some(), AbsoluteMonarchyError::MissingRequiredAccount);
                 let nft_mint = ctx.accounts.nft_mint.as_ref().unwrap();
+                require!(nft_mint.key() == nft_config.custom_mint, AbsoluteMonarchyError::InvalidMint);
                 kingdom.nft_mint = Some(nft_mint.key());
                 kingdom.total_nft_token_supply = nft_mint.supply;
                 kingdom.nft_minted = nft_mint.supply;
@@ -145,6 +135,7 @@ pub fn initialize_kingdom(
             KingdomTokenType::Existing => {
                 require!(ctx.accounts.spl_mint.is_some(), AbsoluteMonarchyError::MissingRequiredAccount);
                 let existing_spl_mint = ctx.accounts.spl_mint.as_ref().unwrap();
+                require!(existing_spl_mint.key() == spl_config.custom_mint, AbsoluteMonarchyError::InvalidMint);
                 kingdom.spl_mint = Some(existing_spl_mint.key());
                 kingdom.total_spl_token_supply = existing_spl_mint.supply;
                 kingdom.spl_minted = existing_spl_mint.supply;

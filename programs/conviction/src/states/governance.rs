@@ -76,13 +76,12 @@ pub struct InitializeGovernanceArgs {
     pub nft_config: Option<TokenConfig>,
     pub spl_config: Option<TokenConfig>,
     pub primary_governance_token: PrimaryGovernanceToken,
-    pub initialize_sbt: bool,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct TokenConfig {
     pub token_type: GovernanceTokenType,
-    pub custom_mint: Option<Pubkey>,
+    pub custom_mint: Pubkey,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
