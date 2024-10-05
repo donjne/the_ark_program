@@ -52,6 +52,14 @@ pub mod absolute_monarchy {
         make_decision::make_decision(ctx, args)
     }
 
+    pub fn create_kingdom_invite(ctx: Context<CreateKingdomInvite>, expiration_days: u64) -> Result<()> {
+        create_invite::create_kingdom_invite(ctx, expiration_days)
+    }
+
+    pub fn use_kingdom_invite(ctx: Context<UseKingdomInvite>) -> Result<()> {
+        use_invite::use_kingdom_invite(ctx)
+    }
+
     // Legislative Powers
     pub fn decree(ctx: Context<DecreeContext>, decree_text: String, decree_type: DecreeType) -> Result<()> {
         init_decree::decree(ctx, decree_text, decree_type)

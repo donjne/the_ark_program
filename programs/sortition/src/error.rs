@@ -61,5 +61,13 @@ pub enum GovernanceError {
     #[msg("Already a member of this junta")]
     AlreadyMember,
     #[msg("Arithmetic Error")]
-    ArithmeticError
+    ArithmeticError,
+    #[msg("Invite expired")]
+    InviteExpired,
+    #[msg("Invite used")]
+    InviteAlreadyUsed,
+    #[msg("Invite invalid")]
+    InvalidInvite,
+    #[msg("Invalid authority")]
+    Unauthorized
 }

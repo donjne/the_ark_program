@@ -16,6 +16,9 @@ pub mod mint_nft;
 pub mod mint_sbt;
 pub mod mint_spl;
 pub mod add;
+pub mod create_invite;
+pub mod use_invite;
+
 
 pub use initialize_junta::*;
 pub use appoint_officer::*;
@@ -35,3 +38,5 @@ pub use  mint_nft::*;
 pub use mint_sbt::*;
 pub use mint_spl::*;
 pub use add::*;
+pub use create_invite::*;
+pub use use_invite::*;

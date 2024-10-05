@@ -39,6 +39,14 @@ pub mod flat_dao {
         Ok(())
     }
 
+    pub fn create_flatdao_invite(ctx: Context<CreateInvite>, expiration_days: u64) -> Result<()> {
+        create_invite(ctx, expiration_days)
+    }
+
+    pub fn use_flatdao_invite(ctx: Context<UseInvite>) -> Result<()> {
+        use_invite(ctx)
+    }
+
     pub fn init_analytics(ctx: Context<Init>) -> Result<()> {
         ctx.accounts.init_analytics(&ctx.bumps)
     }

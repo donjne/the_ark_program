@@ -65,5 +65,13 @@ pub enum GovernanceError {
     #[msg("Missing SPL config")] 
     MissingSPLConfig,
     #[msg("Insufficient tokens")] 
-    InsufficientTokens
+    InsufficientTokens,
+    #[msg("Invite expired")]
+    InviteExpired,
+    #[msg("Invite used")]
+    InviteAlreadyUsed,
+    #[msg("Invite invalid")]
+    InvalidInvite,
+    #[msg("Unauthorized")]
+    Unauthorized
 }

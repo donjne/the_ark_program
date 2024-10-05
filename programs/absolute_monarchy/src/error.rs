@@ -73,5 +73,11 @@ pub enum AbsoluteMonarchyError {
     #[msg("Supply has been exceeded")]
     ExceedsSupply,
     #[msg("Overflow error")]
-    Overflow
+    Overflow,
+    #[msg("Invite expired")]
+    InviteExpired,
+    #[msg("Invite used")]
+    InviteAlreadyUsed,
+    #[msg("Invite invalid")]
+    InvalidInvite
 }

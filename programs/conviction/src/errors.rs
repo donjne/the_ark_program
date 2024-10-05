@@ -48,5 +48,11 @@ pub enum ErrorCode {
     #[msg("NFT Mint not set")] 
     NftMintNotSet,
     #[msg("SPL mint not set")] 
-    SplMintNotSet
+    SplMintNotSet,
+    #[msg("Invite expired")]
+    InviteExpired,
+    #[msg("Invite used")]
+    InviteAlreadyUsed,
+    #[msg("Invite invalid")]
+    InvalidInvite
 }

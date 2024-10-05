@@ -48,6 +48,14 @@ pub mod sortition {
         register_citizen(ctx, name, region, age_group, other_demographic)
     }
 
+    pub fn create_governance_invite(ctx: Context<CreateGovernanceInvite>, expiration_days: u64) -> Result<()> {
+        create_invite::create_governance_invite(ctx, expiration_days)
+    }
+
+    pub fn use_governance_invite(ctx: Context<UseGovernanceInvite>, name: String, region: u8, age_group: u8, other_demographic: u8) -> Result<()> {
+        use_invite::use_governance_invite(ctx, name, region, age_group, other_demographic)
+    }
+
     pub fn select_sortition_assembly(ctx: Context<SelectAssembly>, term_length: i64) -> Result<()> {
         select_assembly(ctx, term_length)
     }

@@ -13,6 +13,7 @@ pub mod stake_nft;
 pub mod unstake_nft;
 pub mod add;
 pub mod make_decision;
+pub mod create_invite;
 
 
 pub use cancel_proposal::*;
@@ -30,3 +31,5 @@ pub use stake_nft::*;
 pub use unstake_nft::*;
 pub use add::*;
 pub use make_decision::*;
+pub use create_invite::*;
+

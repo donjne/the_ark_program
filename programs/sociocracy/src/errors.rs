@@ -46,5 +46,11 @@ pub enum GovernanceError {
     #[msg("Invalid Parent Circle")] 
     InvalidParentCircle,
     #[msg("Circle is full")] 
-    CircleFullyBanner
+    CircleFullyBanner,
+    #[msg("Invite expired")]
+    InviteExpired,
+    #[msg("Invite used")]
+    InviteAlreadyUsed,
+    #[msg("Invite invalid")]
+    InvalidInvite
 }

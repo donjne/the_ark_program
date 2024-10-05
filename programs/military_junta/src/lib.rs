@@ -42,6 +42,14 @@ pub mod military_junta {
         initialize_junta(ctx, args)
     }
 
+    pub fn create_junta_invite(ctx: Context<CreateJuntaInvite>, expiration_days: u64) -> Result<()> {
+        create_invite::create_junta_invite(ctx, expiration_days)
+    }
+
+    pub fn use_junta_invite(ctx: Context<UseJuntaInvite>) -> Result<()> {
+        use_invite::use_junta_invite(ctx)
+    }
+
     pub fn appoint_officers(ctx: Context<AppointOfficer>, rank: u8) -> Result<()> {
         appoint_officer(ctx, rank)
     }

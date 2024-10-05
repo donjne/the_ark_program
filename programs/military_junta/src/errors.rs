@@ -2,8 +2,6 @@ use anchor_lang::error_code;
 
 #[error_code]
 pub enum ErrorCode {
-    #[msg("Invalid authority.")]
-    Unauthorized,
     #[msg("Too many officers. Maximum number is 10.")]
     TooManyOfficers,
     #[msg("The maximum amount of 10 rebels have been reached.")]
@@ -62,6 +60,14 @@ pub enum ErrorCode {
     InsufficientTokens,
     #[msg("Already a member of this junta")]
     AlreadyMember,
-    #[msg("Arithmetic Error")]
-    ArithmeticError
+    #[msg("This invite has already been used")]
+    InviteAlreadyUsed,
+    #[msg("This invite has expired")]
+    InviteExpired,
+    #[msg("Invalid invite for this Junta")]
+    InvalidInvite,
+    #[msg("Unauthorized to perform this action")]
+    Unauthorized,
+    #[msg("Arithmetic error occurred")]
+    ArithmeticError,
 }

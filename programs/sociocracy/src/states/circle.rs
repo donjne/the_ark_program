@@ -3,7 +3,6 @@ use anchor_lang::prelude::*;
 #[account]
 pub struct Circle {
     pub name: String,
-    pub parent_circle: Option<Pubkey>,
     pub members: Vec<Pubkey>,
     pub proposals: Vec<Pubkey>,
     pub description: String,
@@ -44,7 +43,6 @@ impl Circle {
     pub const SPACE: usize = 8 + // discriminator
         4 + Self::MAX_NAME_LENGTH + // name
         4 + Self::MAX_DESCRIPTION_LENGTH + // description
-        (1 + 32) + // parent_circle (Option<Pubkey>)
         4 + (32 * Self::MAX_MEMBERS) + // members
         4 + (32 * Self::MAX_PROPOSALS) + // proposals
         1 + // circle_type (assuming it's an enum with 1 byte)
@@ -71,7 +69,6 @@ impl Circle {
 pub struct CreateCircleArgs {
     pub name: String,
     pub description: String,
-    pub parent_circle: Option<Pubkey>,
     pub circle_type: CircleType,
     pub nft_config: Option<CircleTokenConfig>,
     pub spl_config: Option<CircleTokenConfig>,

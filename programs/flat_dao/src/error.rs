@@ -37,5 +37,13 @@ pub enum ErrorCode {
     #[msg("Maximum members have been reached.")]
     MaxMembersReached,
     #[msg("Arithmetic Error")]
-    ArithmeticError
+    ArithmeticError,
+    #[msg("Unauthorized")]
+    Unauthorized,
+    #[msg("Invite expired")]
+    InviteExpired,
+    #[msg("Invite used")]
+    InviteAlreadyUsed,
+    #[msg("Invite invalid")]
+    InvalidInvite
 }

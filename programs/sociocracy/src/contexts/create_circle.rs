@@ -19,9 +19,6 @@ pub struct CreateCircle<'info> {
     pub payer: Signer<'info>,
 
     /// CHECK: This account is optional and will be validated if provided
-    pub parent_circle: Option<Account<'info, Circle>>,
-
-    /// CHECK: This account is optional and will be validated if provided
     #[account(mut)]
     pub nft_mint: Option<Account<'info, Mint>>,
     
@@ -49,15 +46,6 @@ pub fn create_circle(ctx: Context<CreateCircle>, args: CreateCircleArgs) -> Resu
     circle.members = vec![];
     circle.proposals = vec![];
     circle.bump = ctx.bumps.circle;
-
-    if let Some(parent_circle_pubkey) = args.parent_circle {
-        require!(ctx.accounts.parent_circle.is_some(), GovernanceError::MissingParentCircle);
-        let parent_circle = ctx.accounts.parent_circle.as_ref().unwrap();
-        require!(parent_circle.key() == parent_circle_pubkey, GovernanceError::InvalidParentCircle);
-        circle.parent_circle = Some(parent_circle_pubkey);
-    } else {
-        circle.parent_circle = None;
-    }
 
     if args.spl_config.is_some() {
         require!(ctx.accounts.spl_mint.is_some(), GovernanceError::MissingAccount);

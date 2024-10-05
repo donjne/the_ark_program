@@ -139,9 +139,9 @@ pub fn add_member(ctx: Context<AddMember>) -> Result<()> {
     kingdom.total_subjects += 1;
 
     // Check if the kingdom owns the mint authority
-    if kingdom.key() != ctx.accounts.kingdom_mint.mint_authority.unwrap() {
-        msg!("Warning: The kingdom does not own the mint authority for this token. Anyone who owns the token can join as a member.");
-    }
+    // if kingdom.key() != ctx.accounts.kingdom_mint.mint_authority.unwrap() {
+    //     msg!("Warning: The kingdom does not own the mint authority for this token. Anyone who owns the token can join as a member.");
+    // }
 
     emit!(MemberAdded {
         kingdom: kingdom.key(),

@@ -43,6 +43,14 @@ pub mod polycentric {
         initialize_gov::handler(ctx, args)
     }
 
+    pub fn create_polycentric_governance_invite(ctx: Context<CreateGovernanceInvite>, expiration_days: u64) -> Result<()> {
+        create_governance_invite(ctx, expiration_days)
+    }
+
+    pub fn use_polycentric_governance_invite(ctx: Context<UseGovernanceInvite>) -> Result<()> {
+        use_governance_invite(ctx)
+    }
+
     pub fn create_assembly(ctx: Context<CreateAssembly>, name: String, description: String) -> Result<()> {
         create_assembly::handler(ctx, name, description)
     }

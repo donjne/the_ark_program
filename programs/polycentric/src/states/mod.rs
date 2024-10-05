@@ -6,6 +6,7 @@ pub mod proposal;
 pub mod vote;
 pub mod citizen;
 pub mod tasks;
+pub mod invite;
 
 pub use analytics::*;
 pub use assembly::*;
@@ -15,3 +16,5 @@ pub use proposal::*;
 pub use vote::*;
 pub use citizen::*;
 pub use tasks::*;
+pub use invite::*;
+

@@ -48,6 +48,14 @@ pub mod conviction {
         vote_with_power(ctx, vote, voting_power)
     }
 
+    pub fn create_conviction_invite(ctx: Context<CreateInvite>, expiration_days: u64) -> Result<()> {
+        create_invite(ctx, expiration_days)
+    }
+
+    pub fn use_conviction_invite(ctx: Context<UseInvite>) -> Result<()> {
+        use_invite(ctx)
+    }
+
     pub fn new_proposal(
         ctx: Context<CreateProposal>,
         description: String,

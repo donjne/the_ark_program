@@ -30,20 +30,6 @@ pub struct Junta {
     pub bump: u8,
 }
 
-// pub name: String,
-// pub description: String,
-// pub parent_circle: Option<Pubkey>,
-// pub circle_type: CircleType,
-// pub nft_config: Option<CircleTokenConfig>,
-// pub spl_config: Option<CircleTokenConfig>,
-// pub nft_symbol: String,
-// pub spl_symbol: String,
-// pub nft_supply: u64,
-// pub spl_supply: u64,
-// pub collection_price: u64,
-// pub primary_governance_token: PrimaryGovernanceToken,
-// pub initialize_sbt: bool,
-
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct InitializeJuntaArgs {
     pub name: String,

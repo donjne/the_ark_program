@@ -40,6 +40,14 @@ pub mod sociocracy {
         Ok(())
     }
 
+    pub fn create_circle_invite(ctx: Context<CreateCircleInvite>, expiration_days: u64) -> Result<()> {
+        create_invite(ctx, expiration_days)
+    }
+
+    pub fn use_circle_invite(ctx: Context<UseCircleInvite>, name: String) -> Result<()> {
+        use_invite(ctx, name)
+    }
+
     pub fn create_sociocracy_circle(ctx: Context<CreateCircle>, args: CreateCircleArgs) -> Result<()> {
         create_circle(ctx, args)
     }

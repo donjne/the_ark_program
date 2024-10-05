@@ -14,6 +14,8 @@ pub mod mint_nft;
 pub mod mint_sbt;
 pub mod make_decision;
 pub mod init_treasury;
+pub mod create_invite;
+pub mod use_invite;
 
 pub use abdicate::*;
 pub use appoint::*;
@@ -31,4 +33,7 @@ pub use mint_nft::*;
 pub use mint_sbt::*;
 pub use make_decision::*;
 pub use init_treasury::*;
+pub use create_invite::*;
+pub use use_invite::*;
+
 

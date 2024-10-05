@@ -9,6 +9,7 @@ pub mod privileges;
 pub mod subject;
 pub mod treasury;
 pub mod war;
+pub mod invite;
 
 pub use decree::*;
 pub use division::*;
@@ -21,3 +22,4 @@ pub use privileges::*;
 pub use subject::*;
 pub use treasury::*;
 pub use war::*;
+pub use invite::*;

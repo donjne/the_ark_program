@@ -23,13 +23,9 @@ pub mod the_ark_program {
 
     pub fn initialize_ark(ctx: Context<InitializeArk>) -> Result<()> {
         let analytics = &mut ctx.accounts.ark_analytics;
-        analytics.created_at = Clock::get()?.unix_timestamp;
+        analytics.initialized_at = Clock::get()?.unix_timestamp;
         analytics.governments = Vec::new();
         analytics.total_governments = 0;
-        analytics.polls = 0;
-        analytics.approved = 0;
-        analytics.rejected = 0;
-        analytics.points = 0;
         Ok(())
     }
 
@@ -52,6 +48,7 @@ pub mod the_ark_program {
 
         // Update ArkAnalytics if needed
         let ark_analytics = &mut ctx.accounts.ark_analytics;
+        ark_analytics.governments.push(ctx.accounts.government_program.key());
         ark_analytics.total_governments += 1;
         
         emit!(StateRegistered {
@@ -60,17 +57,6 @@ pub mod the_ark_program {
             program_id: state_info.program_id,
         });
 
-        Ok(())
-    }
-
-    pub fn update_analytics(ctx: Context<UpdateAnalytics>, approved: bool) -> Result<()> {
-        let analytics = &mut ctx.accounts.ark_analytics;
-        if approved {
-            analytics.approved += 1;
-        } else {
-            analytics.rejected += 1;
-        }
-        analytics.polls += 1;
         Ok(())
     }
 

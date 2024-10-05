@@ -22,5 +22,9 @@ pub enum RouterError {
     Unauthorized,
     #[msg("Verification has already been revoked")]
     AlreadyRevoked,
+    #[msg("Invalid Epoch Index")]
+    InvalidEpochIndex,
+    #[msg("Max Epochs Reached")]
+    MaxEpochsReached
 }
 
